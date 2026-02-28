@@ -1,0 +1,26 @@
+# Quantum simulation
+stim>=1.12
+pymatching>=2.1
+sinter>=1.12
+
+# RL
+stable-baselines3>=2.1
+gymnasium>=0.29
+torch>=2.0
+
+# Data & visualization
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+seaborn>=0.12
+
+# Config & utilities
+pyyaml>=6.0
+tensorboard>=2.14
+tqdm>=4.65
+
+# Testing
+pytest>=7.4
+
+# Jupyter notebook
+ipykernel
