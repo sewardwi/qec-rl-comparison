@@ -1,0 +1,19 @@
+# Reward shaping comparison
+experiment: ablation_reward
+
+distance: 3
+error_rate: 0.01
+
+noise:
+  model_type: depolarizing
+
+reward_types:
+  - sparse
+  - potential_based
+  - heuristic_shaped
+
+total_timesteps: 500000
+
+evaluation:
+  num_eval_shots: 10000
+  eval_freq: 10000

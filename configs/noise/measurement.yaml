@@ -1,0 +1,3 @@
+noise:
+  model_type: measurement
+  physical_error_rate: 0.01

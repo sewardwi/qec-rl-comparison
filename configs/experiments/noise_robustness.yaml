@@ -1,0 +1,15 @@
+# Evaluate all decoders across noise models
+experiment: noise_robustness
+
+distances: [3, 5]
+error_rates: [0.001, 0.005, 0.01, 0.02, 0.05]
+
+noise_models:
+  - depolarizing
+  - biased_z
+  - measurement
+  - correlated
+
+evaluation:
+  num_eval_shots: 10000
+  num_seeds: 3

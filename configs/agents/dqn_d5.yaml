@@ -1,0 +1,18 @@
+agent: dqn
+distance: 5
+rounds: 5
+reward_type: sparse
+total_timesteps: 1000000
+
+hyperparameters:
+  learning_rate: 0.0001
+  buffer_size: 200000
+  batch_size: 128
+  gamma: 0.99
+  exploration_fraction: 0.3
+  exploration_final_eps: 0.05
+  target_update_interval: 2000
+  train_freq: 4
+  learning_starts: 20000
+  features_dim: 128
+  net_arch: [256, 256]

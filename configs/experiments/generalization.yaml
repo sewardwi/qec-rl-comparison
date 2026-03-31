@@ -1,0 +1,19 @@
+# Train on noise A, evaluate on noise B
+experiment: generalization
+
+distance: 3
+error_rate: 0.01
+
+train_noise_models:
+  - depolarizing
+  - biased_z
+
+eval_noise_models:
+  - depolarizing
+  - biased_z
+  - measurement
+  - correlated
+
+evaluation:
+  num_eval_shots: 10000
+  num_seeds: 3

@@ -1,0 +1,12 @@
+seed: 42
+device: auto  # "cpu", "cuda", or "auto"
+
+logging:
+  log_dir: results/logs
+  save_dir: results/models
+  tensorboard: true
+
+evaluation:
+  eval_freq: 10000
+  eval_episodes: 1000
+  num_eval_shots: 10000

@@ -1,0 +1,4 @@
+noise:
+  model_type: biased_z
+  physical_error_rate: 0.01
+  bias_ratio: 10.0  # Z errors 10x more likely than X

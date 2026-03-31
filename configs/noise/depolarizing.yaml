@@ -1,0 +1,3 @@
+noise:
+  model_type: depolarizing
+  physical_error_rate: 0.01

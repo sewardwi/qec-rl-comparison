@@ -1,0 +1,4 @@
+noise:
+  model_type: correlated
+  physical_error_rate: 0.01
+  correlation_strength: 0.005
