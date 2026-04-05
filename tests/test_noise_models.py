@@ -74,11 +74,21 @@ class TestBuildNoisyCircuit:
         syndromes, observables = sc.sample(100, seed=42)
         assert syndromes.shape[1] == sc.circuit.num_detectors
 
-    def test_unimplemented_noise_model(self):
+    def test_biased_z_noise_model(self):
         params = SurfaceCodeParams(distance=3, rounds=3)
-        config = NoiseConfig(NoiseModelType.BIASED_Z, 0.01)
-        with pytest.raises(NotImplementedError):
-            build_noisy_circuit(params, config)
+        config = NoiseConfig(NoiseModelType.BIASED_Z, 0.01, bias_ratio=10.0)
+        sc = build_noisy_circuit(params, config)
+        syndromes, observables = sc.sample(100, seed=42)
+        assert syndromes.shape[0] == 100
+        assert syndromes.shape[1] == sc.circuit.num_detectors
+
+    def test_correlated_noise_model(self):
+        params = SurfaceCodeParams(distance=3, rounds=3)
+        config = NoiseConfig(NoiseModelType.CORRELATED, 0.01, correlation_strength=0.005)
+        sc = build_noisy_circuit(params, config)
+        syndromes, observables = sc.sample(100, seed=42)
+        assert syndromes.shape[0] == 100
+        assert syndromes.shape[1] == sc.circuit.num_detectors
 
     def test_error_rate_scaling(self):
         """Higher error rate should produce more detections on average."""
