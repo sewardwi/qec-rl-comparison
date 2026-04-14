@@ -1,0 +1,4 @@
+distance,data_qubits,total_qubits,rounds,detectors,action_space,obs_channels,dem_errors,dem_boundary,total_gates
+3,9,26,3,24,28,5,286,64,54
+5,25,64,5,120,76,7,1953,239,86
+7,49,118,7,336,148,9,6602,544,118

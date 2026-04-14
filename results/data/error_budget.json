@@ -1,0 +1,7 @@
+{
+  "full": 0.0584,
+  "gate_only": 0.021,
+  "idle_only": 0.002,
+  "measurement_only": 0.0012,
+  "reset_only": 0.0022
+}

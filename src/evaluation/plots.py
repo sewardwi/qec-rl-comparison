@@ -110,34 +110,44 @@ def plot_decoder_comparison(
     df: pd.DataFrame,
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 2: All decoders overlaid per noise model."""
+    """Figure 2: All decoders overlaid per noise model, all distances shown.
+
+    One panel per noise model. Within each panel: color = decoder,
+    linestyle = distance (solid d=3, dashed d=5, dotted d=7).
+    """
     _apply_style()
+    DISTANCE_STYLES = {3: "-", 5: "--", 7: ":"}
     noise_models = sorted(df["noise_model"].unique())
+    distances = sorted(df["distance"].unique())
     n_panels = len(noise_models)
     fig, axes = plt.subplots(1, max(n_panels, 1), figsize=(5 * max(n_panels, 1), 4.5), squeeze=False)
 
     for idx, nm in enumerate(noise_models):
         ax = axes[0, idx]
-        subset = df[(df["noise_model"] == nm) & (df["distance"] == df["distance"].max())]
-        for dec in sorted(subset["decoder"].unique()):
-            d_data = subset[subset["decoder"] == dec].sort_values("physical_error_rate")
-            ax.plot(
-                d_data["physical_error_rate"],
-                d_data["logical_error_rate"],
-                f"{DECODER_MARKERS.get(dec, 'x')}-",
-                color=DECODER_COLORS.get(dec, "gray"),
-                label=dec.upper(),
-                markersize=6,
-            )
+        nm_subset = df[df["noise_model"] == nm]
+        for d in distances:
+            linestyle = DISTANCE_STYLES.get(d, "-.")
+            d_subset = nm_subset[nm_subset["distance"] == d]
+            for dec in sorted(d_subset["decoder"].unique()):
+                d_data = d_subset[d_subset["decoder"] == dec].sort_values("physical_error_rate")
+                ax.plot(
+                    d_data["physical_error_rate"],
+                    d_data["logical_error_rate"],
+                    marker=DECODER_MARKERS.get(dec, "x"),
+                    linestyle=linestyle,
+                    color=DECODER_COLORS.get(dec, "gray"),
+                    label=f"{dec.upper()} d={d}",
+                    markersize=5,
+                )
         ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_xlabel("Physical Error Rate")
         ax.set_ylabel("Logical Error Rate")
         ax.set_title(f"{nm.replace('_', ' ').title()}")
-        ax.legend()
+        ax.legend(fontsize=8)
         ax.grid(True, alpha=0.3, which="both")
 
-    fig.suptitle("Decoder Comparison", y=1.02)
+    fig.suptitle("Decoder Comparison (all distances)", y=1.02)
     plt.tight_layout()
     if save_path:
         fig.savefig(save_path)
@@ -237,30 +247,47 @@ def plot_noise_comparison(
     distance: int = 3,
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 5: LER under each noise model at fixed distance."""
+    """Figure 5: LER across noise models, all decoders, all distances.
+
+    One panel per distance. Within each panel: color = noise model,
+    linestyle = decoder (solid MWPM, dashed DQN, dotted PPO).
+    """
     _apply_style()
-    fig, ax = plt.subplots(figsize=(7, 4.5))
+    DECODER_STYLES = {"mwpm": "-", "dqn": "--", "ppo": ":"}
+    distances = sorted(df["distance"].unique())
+    n_panels = len(distances)
+    fig, axes = plt.subplots(1, max(n_panels, 1), figsize=(6 * max(n_panels, 1), 4.5), squeeze=False)
 
-    subset = df[(df["distance"] == distance) & (df["decoder"] == "mwpm")]
-    for nm in sorted(subset["noise_model"].unique()):
-        nm_data = subset[subset["noise_model"] == nm].sort_values("physical_error_rate")
-        color = NOISE_COLORS.get(nm, "gray")
-        ax.plot(
-            nm_data["physical_error_rate"],
-            nm_data["logical_error_rate"],
-            "o-",
-            color=color,
-            label=nm.replace("_", " ").title(),
-            markersize=6,
-        )
+    for idx, d in enumerate(distances):
+        ax = axes[0, idx]
+        d_subset = df[df["distance"] == d]
+        for nm in sorted(d_subset["noise_model"].unique()):
+            color = NOISE_COLORS.get(nm, "gray")
+            for dec in sorted(d_subset["decoder"].unique()):
+                linestyle = DECODER_STYLES.get(dec, "-.")
+                data = d_subset[
+                    (d_subset["noise_model"] == nm) & (d_subset["decoder"] == dec)
+                ].sort_values("physical_error_rate")
+                if data.empty:
+                    continue
+                ax.plot(
+                    data["physical_error_rate"],
+                    data["logical_error_rate"],
+                    marker=DECODER_MARKERS.get(dec, "x"),
+                    linestyle=linestyle,
+                    color=color,
+                    label=f"{nm.replace('_',' ').title()} {dec.upper()}",
+                    markersize=5,
+                )
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlabel("Physical Error Rate")
+        ax.set_ylabel("Logical Error Rate")
+        ax.set_title(f"Noise Comparison d={d}")
+        ax.legend(fontsize=7)
+        ax.grid(True, alpha=0.3, which="both")
 
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel("Physical Error Rate")
-    ax.set_ylabel("Logical Error Rate")
-    ax.set_title(f"MWPM Performance Across Noise Models (d={distance})")
-    ax.legend()
-    ax.grid(True, alpha=0.3, which="both")
+    fig.suptitle("Performance Across Noise Models (all decoders, all distances)", y=1.02)
     plt.tight_layout()
     if save_path:
         fig.savefig(save_path)

@@ -36,6 +36,7 @@ import numpy as np
 
 from src.envs.reward import (
     RewardType,
+    compute_combined_reward,
     compute_heuristic_reward,
     compute_potential_based_reward,
     compute_sparse_reward,
@@ -370,6 +371,15 @@ class SurfaceCodeEnv(gym.Env):
                 terminal=True,
                 success=success,
             )
+        elif self._reward_type == RewardType.COMBINED:
+            return compute_combined_reward(
+                syndrome_weight_before=syndrome_weight_before,
+                syndrome_weight_after=0,
+                num_corrections=0,
+                gamma=self._gamma,
+                terminal=True,
+                success=success,
+            )
         return 0.0
 
     def _compute_step_reward(
@@ -389,6 +399,14 @@ class SurfaceCodeEnv(gym.Env):
             return compute_heuristic_reward(
                 num_corrections=1 if is_correction else 0,
                 syndromes_cleared=0,
+            )
+        elif self._reward_type == RewardType.COMBINED:
+            syndrome_weight_after = int(self._current_syndrome_grid.sum())
+            return compute_combined_reward(
+                syndrome_weight_before=syndrome_weight_before,
+                syndrome_weight_after=syndrome_weight_after,
+                num_corrections=1 if is_correction else 0,
+                gamma=self._gamma,
             )
         return 0.0
 

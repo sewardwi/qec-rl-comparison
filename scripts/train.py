@@ -39,8 +39,8 @@ def main():
         help="Noise model type"
     )
     parser.add_argument(
-        "--reward-type", type=str, default="sparse",
-        choices=["sparse", "potential_based", "heuristic_shaped"],
+        "--reward-type", type=str, default="combined",
+        choices=["sparse", "potential_based", "heuristic_shaped", "combined"],
         help="Reward type"
     )
     parser.add_argument(

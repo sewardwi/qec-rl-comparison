@@ -1,0 +1,17 @@
+decoder,train_noise,eval_noise,logical_error_rate
+dqn,depolarizing,depolarizing,0.19599999999999995
+ppo,depolarizing,depolarizing,0.27
+dqn,depolarizing,biased_z,0.04200000000000004
+ppo,depolarizing,biased_z,0.10399999999999998
+dqn,depolarizing,measurement,0.062000000000000055
+ppo,depolarizing,measurement,0.08799999999999997
+dqn,depolarizing,correlated,0.388
+ppo,depolarizing,correlated,0.44799999999999995
+dqn,biased_z,depolarizing,0.352
+ppo,biased_z,depolarizing,0.18400000000000005
+dqn,biased_z,biased_z,0.276
+ppo,biased_z,biased_z,0.06999999999999995
+dqn,biased_z,measurement,0.11599999999999999
+ppo,biased_z,measurement,0.05600000000000005
+dqn,biased_z,correlated,0.45799999999999996
+ppo,biased_z,correlated,0.33999999999999997

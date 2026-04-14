@@ -130,39 +130,42 @@ def run_all_experiments(args):
         print("PHASE 1: Training")
         print("=" * 60)
 
-        train_configs = [
-            # (agent, distance, noise_type, reward)
-            ("dqn", 3, "depolarizing", "sparse"),
-            ("ppo", 3, "depolarizing", "sparse"),
-            ("dqn", 5, "depolarizing", "sparse"),
-            ("ppo", 5, "depolarizing", "sparse"),
-            ("dqn", 3, "measurement", "sparse"),
-            ("ppo", 3, "measurement", "sparse"),
-            ("dqn", 3, "biased_z", "sparse"),
-            ("ppo", 3, "biased_z", "sparse"),
-        ]
+        # All 4 noise models x both agents using the combined reward.
+        # d=5 only for depolarizing (larger action/state space, train longer).
+        NOISE_MODELS_D3 = ["depolarizing", "measurement", "biased_z", "correlated"]
+        NOISE_MODELS_D5 = ["depolarizing"]
+        REWARD_TYPE = "combined"
 
-        for agent_type, d, noise_name, reward_type in train_configs:
+        train_configs = []
+        for noise_name in NOISE_MODELS_D3:
+            train_configs.append(("dqn", 3, noise_name))
+            train_configs.append(("ppo", 3, noise_name))
+        for noise_name in NOISE_MODELS_D5:
+            train_configs.append(("dqn", 5, noise_name))
+            train_configs.append(("ppo", 5, noise_name))
+
+        for agent_type, d, noise_name in train_configs:
             noise_config = _make_noise_config(noise_name, args.error_rate)
             ts = args.timesteps if d == 3 else int(args.timesteps * 1.5)
             key = f"{agent_type}_d{d}_{noise_name}"
 
-            print(f"\n  Training {key} for {ts:,} steps...")
+            print(f"\n  Training {key} ({REWARD_TYPE}) for {ts:,} steps...")
             t0 = time.time()
             model, eval_results, mwpm_ler = train_agent(
                 agent_type=agent_type,
                 distance=d,
                 noise_config=noise_config,
                 timesteps=ts,
-                reward_type=reward_type,
+                reward_type=REWARD_TYPE,
                 seed=args.seed,
                 eval_freq=max(1000, ts // 20),
                 eval_episodes=args.eval_episodes,
                 save_dir=args.model_dir,
             )
             elapsed = time.time() - t0
-            print(f"    Done in {elapsed:.1f}s. "
-                  f"Final LER: {eval_results[-1]['logical_error_rate']:.4f}" if eval_results else "")
+            if eval_results:
+                print(f"    Done in {elapsed:.1f}s. "
+                      f"Final LER: {eval_results[-1]['logical_error_rate']:.4f}")
 
             trained_models[(agent_type, d, noise_name)] = model
             training_data[key] = eval_results
@@ -173,44 +176,12 @@ def run_all_experiments(args):
             json.dump(training_data, f, indent=2)
         print(f"\n  Training curves saved to {training_curves_path}")
 
-        # =============================================
-        # 2. Reward ablation (d=3, depolarizing)
-        # =============================================
-        print("\n" + "=" * 60)
-        print("PHASE 2: Reward Ablation")
-        print("=" * 60)
-
-        ablation_data = {}
-        for reward_type in ["sparse", "potential_based", "heuristic_shaped"]:
-            noise_config = _make_noise_config("depolarizing", args.error_rate)
-            print(f"\n  Training DQN d=3 with {reward_type}...")
-            _, eval_results, _ = train_agent(
-                agent_type="dqn",
-                distance=3,
-                noise_config=noise_config,
-                timesteps=args.timesteps,
-                reward_type=reward_type,
-                seed=args.seed,
-                eval_freq=max(1000, args.timesteps // 20),
-                eval_episodes=args.eval_episodes,
-                save_dir=args.model_dir,
-            )
-            ablation_data[reward_type] = eval_results
-
-        ablation_path = os.path.join(args.data_dir, "reward_ablation.json")
-        with open(ablation_path, "w") as f:
-            json.dump(ablation_data, f, indent=2)
-
     else:
         # Load existing data if skipping training
         training_curves_path = os.path.join(args.data_dir, "training_curves.json")
-        ablation_path = os.path.join(args.data_dir, "reward_ablation.json")
         if os.path.exists(training_curves_path):
             with open(training_curves_path) as f:
                 training_data = json.load(f)
-        if os.path.exists(ablation_path):
-            with open(ablation_path) as f:
-                ablation_data = json.load(f)
 
     # =============================================
     # 3. Evaluation sweeps
@@ -359,14 +330,14 @@ def run_all_experiments(args):
         print("  Figure 3: Decoder ratio")
 
         # Figure 5: Noise comparison
-        fig5 = plot_noise_comparison(plot_df, distance=3,
+        fig5 = plot_noise_comparison(plot_df,
                                      save_path=os.path.join(args.fig_dir, "fig5_noise_comparison.png"))
         plt.close(fig5)
         print("  Figure 5: Noise comparison")
 
     # Figure 4: Training curves
     if training_data:
-        # Only include d=3 depolarizing for main training curve
+        # Include d=3 depolarizing for both agents on the main training curve
         tc_data = {}
         for key in ["dqn_d3_depolarizing", "ppo_d3_depolarizing"]:
             if key in training_data and training_data[key]:
@@ -377,19 +348,6 @@ def run_all_experiments(args):
             fig4 = plot_training_curves(tc_data, os.path.join(args.fig_dir, "fig4_training_curves.png"))
             plt.close(fig4)
             print("  Figure 4: Training curves")
-
-    # Figure 6: Reward ablation
-    if "ablation_data" in dir() and ablation_data:
-        fig6 = plot_reward_ablation(ablation_data, os.path.join(args.fig_dir, "fig6_reward_ablation.png"))
-        plt.close(fig6)
-        print("  Figure 6: Reward ablation")
-    elif os.path.exists(ablation_path):
-        with open(ablation_path) as f:
-            ablation_data = json.load(f)
-        if ablation_data:
-            fig6 = plot_reward_ablation(ablation_data, os.path.join(args.fig_dir, "fig6_reward_ablation.png"))
-            plt.close(fig6)
-            print("  Figure 6: Reward ablation")
 
     # Figure 7: Syndrome gallery
     syndromes_by_noise = {}
@@ -421,6 +379,7 @@ def run_all_experiments(args):
     demo_model = trained_models.get(("dqn", 3, "depolarizing"))
     if demo_model is None:
         demo_model = trained_models.get(("ppo", 3, "depolarizing"))
+    # (keys are (agent_type, distance, noise_name) — same as trained_models dict)
 
     if demo_model is not None:
         obs_demo, _ = env_demo.reset()
