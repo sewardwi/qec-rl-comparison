@@ -1,104 +1,78 @@
-# RL for Quantum Error Correction
+# RL Decoders for the Surface Code: DQN vs PPO vs MWPM
 
-## 1. Overview
-
-This project compares two RL decoders (DQN and PPO) against the standard Minimum-Weight Perfect Matching (MWPM) decoder for surface code quantum error correction. The emphasis is on physically-motivated quantum simulation — diverse noise models, circuit-level analysis, syndrome visualization — combined with rigorous RL methodology.
-
-**Key libraries:** Stim (circuit simulation & sampling), PyMatching (MWPM baseline), Sinter (parallelized Monte Carlo benchmarking), Stable-Baselines3 (DQN/PPO), Gymnasium (RL environment).
-
-**Key design decisions:**
-- Custom Gymnasium environment (not `gym-surfacecode`, which is limited to d≤5)
-- On-the-fly batched sampling from Stim for training; deterministic pre-sampled sets for evaluation
-- SB3 with custom CNN feature extractors (not from-scratch RL implementations)
-- Sparse reward by default; potential-based shaping as principled fallback; heuristic shaping for ablation
-- No Qiskit — Stim's noise models are more relevant, faster, and better reflect the state of the art
+Compares two deep RL decoders (DQN and PPO) against the classical MWPM baseline for surface code quantum error correction. Circuits are simulated with Stim, the RL environment is a custom Gymnasium MDP, and agents are trained with Stable-Baselines3.
 
 ---
 
-## 2. Project Structure (eventually)
+## What it does
 
+Physical errors corrupt qubits continuously. A decoder reads syndrome measurements and figures out what corrections to apply to preserve the logical qubit. MWPM is the standard classical decoder, optimal for depolarizing noise but requires an explicit noise model. The question here is whether RL agents can learn competitive decoding strategies without one.
+
+The project trains DQN and PPO on four noise models and evaluates them against MWPM across a sweep of physical error rates and code distances.
+
+---
+
+## Noise models
+
+| Model | Physical motivation |
+|---|---|
+| Depolarizing | Symmetric X/Y/Z errors, standard benchmark |
+| Biased-Z | Dephasing dominates, as in superconducting transmons |
+| Measurement | Readout errors 10× larger than gate errors |
+| Correlated | Crosstalk between neighboring qubits — MWPM degrades here |
+
+Correlated noise is the most interesting case: MWPM struggles because it assumes independent errors, while RL learns purely from experience.
+
+---
+
+## MDP formulation
+
+- **State:** `(d+2) × H × W` tensor: syndrome grids for each round plus X/Z correction accumulators
+- **Actions:** `Discrete(3d² + 1)`: apply X/Z/Y to any data qubit, or commit to end the round
+- **Reward:** Combined: potential-based shaping on syndrome weight reduction + small correction penalty + sparse ±1 terminal
+- **Episode:** d commit rounds, one syndrome instance per episode
+
+---
+
+## Key design choices
+
+- Stim for circuit simulation, faster and more accurate noise modeling than Qiskit
+- Syndromes pre-sampled in batches of 1024 for training efficiency; deterministic held-out sets for evaluation
+- Custom `SyndromeCNN` with 3×3 kernels, standard Atari CNNs (8×8 kernels) collapse the small syndrome grids
+- Evaluation always uses sparse reward regardless of training reward, for fair comparison
+- All decoders evaluated on identical syndrome sets for fair LER comparison
+
+---
+
+## Running it
+
+Train all agents on all noise models:
+```bash
+python scripts/run_experiments.py --timesteps 500000 --eval-shots 5000 --eval-episodes 500
 ```
-qec-rl/
-│
-├── pyproject.toml
-├── requirements.txt
-├── Makefile                               # make train-d3, make evaluate, make plots
-├── README.md
-│
-├── configs/
-│   ├── base.yaml                          # Shared defaults (seed, device, logging)
-│   ├── noise/
-│   │   ├── depolarizing.yaml
-│   │   ├── biased_z.yaml                  # Z-biased (dephasing-dominated)
-│   │   ├── measurement.yaml               # Measurement-dominated noise
-│   │   └── correlated.yaml                # Spatially correlated errors
-│   ├── agents/
-│   │   ├── dqn_d3.yaml
-│   │   ├── dqn_d5.yaml
-│   │   ├── ppo_d3.yaml
-│   │   └── ppo_d5.yaml
-│   └── experiments/
-│       ├── threshold_sweep.yaml           # Main: logical vs physical error rate curves
-│       ├── noise_robustness.yaml          # Biased/correlated noise evaluation
-│       ├── generalization.yaml            # Train on depol, eval on biased
-│       └── ablation_reward.yaml           # Reward shaping comparison
-│
-├── src/
-│   ├── __init__.py
-│   │
-│   ├── quantum/                           # ── Quantum simulation (emphasis area) ──
-│   │   ├── __init__.py
-│   │   ├── surface_code.py                # Circuit generation & batched sampling via Stim
-│   │   ├── noise_models.py                # 4 noise models with physical motivation
-│   │   ├── syndrome.py                    # Syndrome reshaping, diff computation, visualization
-│   │   ├── decoder_baseline.py            # MWPM via PyMatching + Sinter benchmarking
-│   │   └── circuit_analysis.py            # Error budget, DEM analysis, circuit structure
-│   │
-│   ├── envs/                              # ── Gymnasium environment ──
-│   │   ├── __init__.py
-│   │   ├── surface_code_env.py            # Core MDP environment
-│   │   ├── wrappers.py                    # Observation wrappers (flatten, pad)
-│   │   └── reward.py                      # Reward variants: sparse, potential-based, heuristic
-│   │
-│   ├── agents/                            # ── RL agents via SB3 ──
-│   │   ├── __init__.py
-│   │   ├── networks.py                    # CNN feature extractors for syndrome grids
-│   │   ├── dqn_agent.py                   # DQN config & creation via SB3
-│   │   ├── ppo_agent.py                   # PPO config & creation via SB3
-│   │   └── callbacks.py                   # Eval callback, optional curriculum
-│   │
-│   ├── evaluation/                        # ── Evaluation & plotting ──
-│   │   ├── __init__.py
-│   │   ├── evaluator.py                   # Systematic evaluation harness
-│   │   ├── metrics.py                     # Logical error rate, CIs, threshold estimation
-│   │   └── plots.py                       # Publication-quality figures
-│   │
-│   └── utils/
-│       ├── __init__.py
-│       ├── config.py                      # YAML config loading & merging
-│       └── reproducibility.py             # Seed management, deterministic settings
-│
-├── scripts/
-│   ├── train.py                           # Main training entry point (config-driven)
-│   ├── evaluate.py                        # Full evaluation grid
-│   ├── benchmark_mwpm.py                  # MWPM baselines via Sinter
-│   └── plot_results.py                    # Generate all figures
-│
-├── notebooks/
-│   ├── 01_surface_code_exploration.ipynb  # Stim circuits, syndrome visualization, MWPM
-│   ├── 02_env_validation.ipynb            # Environment sanity checks
-│   ├── 03_training_analysis.ipynb         # Training curves, debugging
-│   └── 04_final_results.ipynb             # Paper figures and analysis
-│
-├── tests/
-│   ├── test_surface_code.py
-│   ├── test_noise_models.py
-│   ├── test_env.py
-│   └── test_evaluator.py
-│
-└── results/                               # Git-ignored
-    ├── models/
-    ├── logs/
-    ├── data/
-    └── figures/
+
+Train a single agent:
+```bash
+python scripts/train.py --agent dqn --distance 3 --noise-model correlated --timesteps 500000
 ```
+
+Regenerate figures from existing results:
+```bash
+python scripts/run_experiments.py --skip-training
+```
+
+---
+
+## Results summary
+
+Both agents learn above-random baselines quickly but remain 3–5× worse than MWPM on depolarizing noise at the training budgets used. The gap narrows on structured noise (biased-Z, measurement) where errors have more regular patterns. Correlated noise, where MWPM itself degrades significantly, is the setting most likely to favor RL.
+
+---
+
+## Stack
+
+- [Stim](https://github.com/quantumlib/Stim): stabilizer circuit simulation and syndrome sampling
+- [PyMatching](https://github.com/oscarhiggott/PyMatching): MWPM decoder
+- [Sinter](https://github.com/quantumlib/Stim/tree/main/glue/sample): parallelized Monte Carlo benchmarking
+- [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3): DQN and PPO implementations
+- [Gymnasium](https://gymnasium.farama.org/): RL environment interface
