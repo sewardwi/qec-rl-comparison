@@ -1,4 +1,5 @@
-"""Full evaluation grid: run all decoders on identical syndrome sets.
+"""
+Full evaluation grid: run all decoders on identical syndrome sets.
 
 Usage:
     python scripts/evaluate.py --model-dir results/models/dqn_d3_p0.01
@@ -76,12 +77,12 @@ def main():
     if args.error_rates is None:
         args.error_rates = np.logspace(-3, -0.7, 15).tolist()
 
-    # Build noise configs
+    # build noise configs
     noise_configs = []
     for nm in args.noise_models:
         noise_configs.append(NoiseConfig(NoiseModelType(nm), 0.01))
 
-    # Create evaluator
+    # create evaluator
     evaluator = DecoderEvaluator(
         distances=args.distances,
         error_rates=args.error_rates,
@@ -90,10 +91,10 @@ def main():
         seed=args.seed,
     )
 
-    # Always add MWPM
+    # always add MWPM
     evaluator.add_decoder("mwpm", make_mwpm_decode_fn())
 
-    # Add RL models if provided
+    # add RL models if provided
     if args.dqn_model:
         from stable_baselines3 import DQN
 
@@ -121,16 +122,13 @@ def main():
     print(f"Shots per point: {args.num_shots:,}")
     print()
 
-    # Run evaluation
     df = evaluator.run(verbose=True)
 
-    # Save results
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     df.to_csv(args.output, index=False)
     print(f"\nResults saved to {args.output}")
     print(f"Total rows: {len(df)}")
 
-    # Print summary
     print("\nSummary:")
     for decoder in df["decoder"].unique():
         subset = df[df["decoder"] == decoder]

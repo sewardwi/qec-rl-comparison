@@ -1,4 +1,5 @@
-"""Surface code circuit generation and batched sampling via Stim.
+"""
+Surface code circuit generation and batched sampling via Stim.
 
 Provides high-level abstractions over Stim's circuit generation for the
 rotated surface code. Handles circuit generation for multiple distances
@@ -18,7 +19,8 @@ import stim
 
 @dataclasses.dataclass(frozen=True)
 class SurfaceCodeParams:
-    """Immutable specification of a surface code instance.
+    """
+    Immutable specification of a surface code instance.
 
     Attributes:
         distance: Code distance d. The code encodes 1 logical qubit in
@@ -55,7 +57,8 @@ class SurfaceCodeParams:
 
 @dataclasses.dataclass
 class SurfaceCodeCircuit:
-    """A generated surface code circuit with metadata and cached sampler.
+    """
+    A generated surface code circuit with metadata and cached sampler.
 
     Attributes:
         params: Code parameters used to generate this circuit.
@@ -95,16 +98,15 @@ class SurfaceCodeCircuit:
     def sample(
         self, shots: int = 1024, seed: Optional[int] = None
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Batch-sample detection events and observable flips.
+        """
+        Batch-sample detection events and observable flips.
 
-        Args:
-            shots: Number of samples to draw.
-            seed: RNG seed for sampler compilation (only used on first call).
+        shots: Number of samples to draw.
+        seed: RNG seed for sampler compilation (only used on first call).
 
-        Returns:
-            (detections, observables):
-                detections: bool array of shape (shots, num_detectors)
-                observables: bool array of shape (shots, num_observables)
+        (detections, observables):
+            detections: bool array of shape (shots, num_detectors)
+            observables: bool array of shape (shots, num_observables)
         """
         sampler = self.compile_sampler(seed)
         return sampler.sample(shots, separate_observables=True)
@@ -114,18 +116,17 @@ def generate_circuit(
     params: SurfaceCodeParams,
     noise_params: dict[str, float],
 ) -> SurfaceCodeCircuit:
-    """Generate a noisy surface code circuit using Stim.
+    """
+    Generate a noisy surface code circuit using Stim.
 
-    Args:
-        params: Code parameters (distance, rounds, basis).
-        noise_params: Dict with keys matching stim.Circuit.generated kwargs:
-            - after_clifford_depolarization
-            - before_round_data_depolarization
-            - before_measure_flip_probability
-            - after_reset_flip_probability
+    params: Code parameters (distance, rounds, basis).
+    noise_params: Dict with keys matching stim.Circuit.generated kwargs:
+        - after_clifford_depolarization
+        - before_round_data_depolarization
+        - before_measure_flip_probability
+        - after_reset_flip_probability
 
-    Returns:
-        SurfaceCodeCircuit wrapping the generated Stim circuit.
+    SurfaceCodeCircuit wrapping the generated Stim circuit.
     """
     circuit = stim.Circuit.generated(
         params.task_string,
@@ -141,19 +142,18 @@ def generate_circuit(
 
 
 def get_qubit_layout(distance: int) -> dict[str, np.ndarray]:
-    """Compute the physical qubit layout for the rotated surface code.
+    """
+    Compute the physical qubit layout for the rotated surface code.
 
     Generates a noiseless circuit and extracts qubit coordinates from the
     circuit's coordinate annotations.
 
-    Args:
-        distance: Code distance.
+    distance: Code distance.
 
-    Returns:
-        Dict with:
-            "data_qubit_coords": (n, 2) array of data qubit (x, y) positions
-            "measure_qubit_coords": (m, 2) array of measurement qubit positions
-            "all_qubit_coords": (n+m, 2) array of all qubit positions
+    Dict with:
+        "data_qubit_coords": (n, 2) array of data qubit (x, y) positions
+        "measure_qubit_coords": (m, 2) array of measurement qubit positions
+        "all_qubit_coords": (n+m, 2) array of all qubit positions
     """
     circuit = stim.Circuit.generated(
         "surface_code:rotated_memory_z",
@@ -166,13 +166,8 @@ def get_qubit_layout(distance: int) -> dict[str, np.ndarray]:
     measure_coords = []
 
     for qubit_idx, coord in sorted(all_coords.items()):
-        # In the rotated surface code, data qubits and measure qubits
-        # are interleaved on the lattice. We distinguish them by checking
-        # which qubits are used as targets of measurement operations.
         coord_arr = np.array(coord[:2])
         data_coords.append((qubit_idx, coord_arr))
-        # Note: a more precise separation requires circuit inspection;
-        # for now we return all coordinates and let callers filter.
 
     all_arr = np.array([c for _, c in data_coords])
     return {
@@ -182,16 +177,16 @@ def get_qubit_layout(distance: int) -> dict[str, np.ndarray]:
 
 
 def analyze_circuit_structure(sc: SurfaceCodeCircuit) -> dict:
-    """Analyze and return structural properties of a surface code circuit.
+    """
+    Analyze and return structural properties of a surface code circuit.
 
-    Returns:
-        Dict with circuit statistics useful for understanding complexity
-        scaling with distance.
+    Dict with circuit statistics useful for understanding complexity
+    scaling with distance.
     """
     circuit = sc.circuit
     dem = sc.detector_error_model
 
-    # Count gates by type
+    # count gates by type
     gate_counts: dict[str, int] = {}
     for instruction in circuit.flattened():
         name = instruction.name
@@ -204,7 +199,7 @@ def analyze_circuit_structure(sc: SurfaceCodeCircuit) -> dict:
                 1, _gate_target_count(name)
             )
 
-    # Count DEM error mechanisms
+    # count DEM error mechanisms
     num_error_mechanisms = 0
     for instruction in dem.flattened():
         if instruction.type == "error":

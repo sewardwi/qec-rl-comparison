@@ -1,4 +1,4 @@
-# Evaluate all decoders across noise models
+# evaluate all decoders across noise models
 experiment: noise_robustness
 
 distances: [3, 5]

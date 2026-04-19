@@ -1,4 +1,4 @@
-"""Tests for surface_code_env.py — Gymnasium environment sanity checks."""
+"""Tests for surface_code_env.py. Gymnasium environment sanity checks."""
 
 import gymnasium as gym
 import numpy as np
@@ -56,7 +56,7 @@ class TestEnvReset:
 
     def test_reset_clears_corrections(self, env_d3):
         obs, _ = env_d3.reset()
-        # Correction channels (last 2) should be all zeros
+        # correction channels (last 2) should be all zeros
         x_channel = obs[-2]
         z_channel = obs[-1]
         assert x_channel.sum() == 0
@@ -91,9 +91,9 @@ class TestEnvStep:
     def test_correction_updates_observation(self, env_d3):
         """Applying X correction should update the X correction channel."""
         obs_before, _ = env_d3.reset()
-        assert obs_before[-2].sum() == 0  # No X corrections
+        assert obs_before[-2].sum() == 0  # no X corrections
 
-        # Apply X on qubit 0
+        # apply X on qubit 0
         obs_after, reward, term, trunc, info = env_d3.step(0)
         assert obs_after[-2].sum() > 0  # X correction channel updated
 
@@ -117,14 +117,14 @@ class TestEnvStep:
         env_d3.reset()
         env_d3.step(0)  # X on qubit 0
         obs, _, _, _, _ = env_d3.step(0)  # X on qubit 0 again
-        assert obs[-2].sum() == 0  # Cancelled
+        assert obs[-2].sum() == 0
 
     def test_sparse_reward_zero_during_episode(self, env_d3):
         """Sparse reward should be 0 for non-terminal steps."""
         env_d3.reset()
-        _, reward, _, _, _ = env_d3.step(0)  # Correction
+        _, reward, _, _, _ = env_d3.step(0)  # correction
         assert reward == 0.0
-        _, reward, _, _, _ = env_d3.step(env_d3._commit_action)  # Commit (not final)
+        _, reward, _, _, _ = env_d3.step(env_d3._commit_action)  # commit (not final)
         assert reward == 0.0
 
     def test_terminal_reward_is_nonzero(self, env_d3):
@@ -140,7 +140,7 @@ class TestEnvStep:
     def test_invalid_action_raises(self, env_d3):
         env_d3.reset()
         with pytest.raises(ValueError):
-            env_d3.step(100)  # Beyond action space
+            env_d3.step(100)  # beyond action space
 
     def test_max_corrections_truncation(self):
         """Exceeding max corrections per round should truncate."""
@@ -150,7 +150,7 @@ class TestEnvStep:
             max_corrections_per_round=2,
         )
         env.reset()
-        # Apply 2 corrections (at the limit)
+        # apply 2 corrections (at the limit)
         env.step(0)
         _, _, _, truncated, info = env.step(1)
         assert truncated
@@ -171,7 +171,7 @@ class TestEnvObservation:
     def test_syndrome_channels_are_binary(self, env_d3):
         """Syndrome channels should only contain 0 or 1."""
         obs, _ = env_d3.reset()
-        syndrome_channels = obs[:4]  # First 4 channels for d=3 (4 temporal slices)
+        syndrome_channels = obs[:4]  # first 4 channels for d=3 (4 temporal slices)
         unique_vals = np.unique(syndrome_channels)
         assert all(v in (0.0, 1.0) for v in unique_vals)
 
@@ -182,9 +182,9 @@ class TestRewardTypes:
             distance=3, physical_error_rate=0.01, reward_type="potential_based"
         )
         env.reset()
-        # Non-terminal step should give non-zero reward (potential difference)
+        # non-terminal step should give non-zero reward (potential difference)
         _, reward, _, _, _ = env.step(env._commit_action)
-        # Reward can be anything for potential-based; just check it runs
+        # reward can be anything for potential-based; just check it runs
         assert isinstance(reward, float)
 
     def test_heuristic_reward(self):
@@ -192,7 +192,7 @@ class TestRewardTypes:
             distance=3, physical_error_rate=0.01, reward_type="heuristic_shaped"
         )
         env.reset()
-        # Correction should give small negative reward
+        # correction should give small negative reward
         _, reward, _, _, _ = env.step(0)
         assert reward == pytest.approx(-0.01)
 
@@ -200,7 +200,7 @@ class TestRewardTypes:
 class TestGymInterface:
     def test_gymnasium_check_env(self, env_d3):
         """Environment should pass gymnasium's basic checks."""
-        # Run a few episodes manually to check interface
+        # run a few episodes manually to check interface
         for _ in range(3):
             obs, info = env_d3.reset()
             assert env_d3.observation_space.contains(obs)
@@ -221,13 +221,17 @@ class TestGymInterface:
 
 
 class TestOracleDecoding:
-    """Test that an oracle agent (using MWPM corrections) achieves
-    a logical error rate consistent with MWPM decoder."""
+    """
+    Test that an oracle agent (using MWPM corrections) achieves
+    a logical error rate consistent with MWPM decoder.
+    """
 
     def test_commit_only_baseline(self):
-        """An agent that only commits (no corrections) should have high error rate
-        at nontrivial noise, but low error rate at zero noise."""
-        # Zero noise: commit-only should always succeed
+        """
+        An agent that only commits (no corrections) should have high error rate
+        at nontrivial noise, but low error rate at zero noise.
+        """
+        # zero noise: commit-only should always succeed
         env = SurfaceCodeEnv.from_config(
             distance=3, physical_error_rate=0.0
         )
@@ -241,11 +245,12 @@ class TestOracleDecoding:
                 done = term or trunc
             if info.get("success"):
                 successes += 1
-        # Should be perfect at zero noise
+        # should be perfect at zero noise
         assert successes == n_episodes
 
     def test_oracle_matches_mwpm(self):
-        """Oracle agent that applies MWPM corrections should reproduce
+        """
+        Oracle agent that applies MWPM corrections should reproduce
         MWPM logical error rate within statistical error.
 
         This is the critical week 2 verification: the environment's
@@ -261,7 +266,7 @@ class TestOracleDecoding:
         config = NoiseConfig(NoiseModelType.DEPOLARIZING, p)
         circuit = build_noisy_circuit(params, config)
 
-        # Get MWPM baseline on a fixed evaluation set
+        # get MWPM baseline on a fixed evaluation set
         syndromes, observables = circuit.sample(n_eval, seed=123)
         decoder = MWPMDecoder.from_surface_code_circuit(circuit)
         mwpm_result = decoder.evaluate(syndromes, observables)
@@ -279,7 +284,7 @@ class TestOracleDecoding:
         # the environment's reward mechanism is correctly computing success.
         no_correction_success = (observables[:, 0] == False).mean()
 
-        # Run environment with commit-only agent
+        # run environment with commit-only agent
         env = SurfaceCodeEnv(circuit=circuit, reward_type="sparse")
         env_successes = 0
         n_env = 500
@@ -294,14 +299,14 @@ class TestOracleDecoding:
                 env_successes += 1
 
         env_success_rate = env_successes / n_env
-        # The commit-only success rate should be in a reasonable range
+        # commit-only success rate should be in a reasonable range
         # (it's 1 - P(logical flip with no corrections))
-        # Allow generous bounds since this is stochastic
+        # allow generous bounds since this is stochastic
         assert 0.0 < env_success_rate < 1.0, (
             f"Environment success rate {env_success_rate} out of expected range"
         )
 
-        # Key check: MWPM should do better than commit-only
+        # key check: MWPM should do better than commit-only
         # (MWPM corrects errors, commit-only doesn't)
         mwpm_success = 1 - mwpm_ler
         # MWPM success rate should be higher than random commit-only

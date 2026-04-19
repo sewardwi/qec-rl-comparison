@@ -1,5 +1,5 @@
 seed: 42
-device: auto  # "cpu", "cuda", or "auto"
+device: auto  # "cpu", "cuda", "auto"
 
 logging:
   log_dir: results/logs

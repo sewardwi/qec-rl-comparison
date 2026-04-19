@@ -9,20 +9,15 @@ import yaml
 
 
 def load_config(path: str | Path) -> dict[str, Any]:
-    """Load a YAML config file.
+    """Load a YAML config file."""
 
-    Args:
-        path: Path to YAML file.
-
-    Returns:
-        Parsed config dict.
-    """
     with open(path) as f:
         return yaml.safe_load(f) or {}
 
 
 def merge_configs(*configs: dict) -> dict[str, Any]:
-    """Merge multiple config dicts, later ones override earlier.
+    """
+    Merge multiple config dicts, later ones override earlier.
 
     Performs shallow merge at top level, deep merge for nested dicts.
     """
@@ -41,13 +36,6 @@ def merge_configs(*configs: dict) -> dict[str, Any]:
 
 
 def load_and_merge(*paths: str | Path) -> dict[str, Any]:
-    """Load and merge multiple YAML config files.
-
-    Args:
-        *paths: Paths to YAML files, in order of increasing priority.
-
-    Returns:
-        Merged config dict.
-    """
+    """Load and merge multiple YAML config files."""
     configs = [load_config(p) for p in paths]
     return merge_configs(*configs)

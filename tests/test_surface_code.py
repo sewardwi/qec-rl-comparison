@@ -69,7 +69,7 @@ class TestGenerateCircuit:
         params = SurfaceCodeParams(distance=d, rounds=d)
         sc = generate_circuit(params, depolarizing_noise)
         expected = (d**2 - 1) * d
-        # Allow some tolerance due to boundary effects in Stim
+        # allow some tolerance due to boundary effects in Stim
         assert sc.num_detectors == expected, (
             f"d={d}: expected {expected} detectors, got {sc.num_detectors}"
         )
@@ -94,7 +94,7 @@ class TestSampling:
 
     def test_sample_deterministic_with_seed(self, circuit_d3):
         """Same seed should give same results (fresh sampler each time)."""
-        # Need fresh circuit objects to avoid cached sampler
+        # need fresh circuit objects to avoid cached sampler
         params = SurfaceCodeParams(distance=3, rounds=3)
         noise = {"after_clifford_depolarization": 0.01}
 
@@ -134,7 +134,7 @@ class TestDetectorCoordinates:
         sc = generate_circuit(params, noise)
         coords = sc.detector_coordinates
         assert len(coords) == sc.num_detectors
-        # Each coordinate should have at least 2 values (x, y) or 3 (x, y, t)
+        # each coordinate should have at least 2 values (x, y) or 3 (x, y, t)
         for det_idx, coord in coords.items():
             assert len(coord) >= 2
 

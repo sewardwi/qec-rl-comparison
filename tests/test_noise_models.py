@@ -27,7 +27,7 @@ class TestNoiseConfig:
         config = NoiseConfig(NoiseModelType.DEPOLARIZING, 0.01)
         new = config.with_error_rate(0.05)
         assert new.physical_error_rate == 0.05
-        assert config.physical_error_rate == 0.01  # Original unchanged
+        assert config.physical_error_rate == 0.01  # original unchanged
 
     def test_zero_error_rate(self):
         config = NoiseConfig(NoiseModelType.DEPOLARIZING, 0.0)
@@ -53,7 +53,7 @@ class TestBuildNoisyCircuit:
 
         syndromes, observables = sc.sample(1000, seed=42)
         assert syndromes.shape == (1000, sc.circuit.num_detectors)
-        # At p=0.05, we expect some detections
+        # at p=0.05 expect some detections
         assert syndromes.sum() > 0
 
     def test_noiseless_circuit(self):

@@ -1,4 +1,4 @@
-# Reward shaping comparison
+# reward shaping comparison
 experiment: ablation_reward
 
 distance: 3

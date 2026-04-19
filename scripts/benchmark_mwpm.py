@@ -1,4 +1,5 @@
-"""Generate MWPM baseline curves via Sinter for all noise models.
+"""
+Generate MWPM baseline curves via Sinter for all noise models.
 
 Usage:
     python scripts/benchmark_mwpm.py
@@ -72,7 +73,7 @@ def main():
     print(f"Max shots: {args.max_shots:,}, Max errors: {args.max_errors}")
     print()
 
-    # Depolarizing noise (standard benchmark)
+    # depolarizing noise (standard benchmark)
     print("Running depolarizing benchmark...")
     df_depol = run_sinter_benchmark(
         distances=args.distances,
@@ -83,7 +84,7 @@ def main():
     )
     df_depol["noise_model"] = "depolarizing"
 
-    # Measurement-dominated noise
+    # measurement-dominated noise
     print("\nRunning measurement-dominated benchmark...")
 
     def measurement_noise(p):
@@ -104,7 +105,6 @@ def main():
     )
     df_meas["noise_model"] = "measurement"
 
-    # Combine
     df = pd.concat([df_depol, df_meas], ignore_index=True)
     df.to_csv(args.output, index=False)
     print(f"\nResults saved to {args.output}")

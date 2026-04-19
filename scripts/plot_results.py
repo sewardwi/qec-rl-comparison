@@ -1,4 +1,5 @@
-"""Regenerate all paper figures from saved experiment data.
+"""
+Regenerate all paper figures from saved experiment data.
 
 Usage:
     python scripts/plot_results.py
@@ -39,7 +40,7 @@ def main():
 
     os.makedirs(args.fig_dir, exist_ok=True)
 
-    # Load data
+    # load data
     eval_path = os.path.join(args.data_dir, "evaluation_results.csv")
     if os.path.exists(eval_path):
         eval_df = pd.read_csv(eval_path)
@@ -63,7 +64,7 @@ def main():
         plt.close(fig5)
         print("Generated: fig5_noise_comparison.png")
 
-    # Training curves
+    # training curves
     tc_path = os.path.join(args.data_dir, "training_curves.json")
     if os.path.exists(tc_path):
         with open(tc_path) as f:
@@ -77,7 +78,7 @@ def main():
             plt.close(fig4)
             print("Generated: fig4_training_curves.png")
 
-    # Reward ablation
+    # reward ablation
     abl_path = os.path.join(args.data_dir, "reward_ablation.json")
     if os.path.exists(abl_path):
         with open(abl_path) as f:
@@ -87,7 +88,7 @@ def main():
             plt.close(fig6)
             print("Generated: fig6_reward_ablation.png")
 
-    # Generalization matrix
+    # generalization matrix
     gen_path = os.path.join(args.data_dir, "generalization_matrix.csv")
     if os.path.exists(gen_path):
         gen_df = pd.read_csv(gen_path)
@@ -97,7 +98,7 @@ def main():
             plt.close(fig9)
             print("Generated: fig9_generalization.png")
 
-    # Scaling table
+    # scaling table
     sc_path = os.path.join(args.data_dir, "scaling_analysis.csv")
     if os.path.exists(sc_path):
         scaling_df = pd.read_csv(sc_path)

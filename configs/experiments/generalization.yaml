@@ -1,4 +1,4 @@
-# Train on noise A, evaluate on noise B
+# train on noise A, evaluate on noise B
 experiment: generalization
 
 distance: 3

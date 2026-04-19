@@ -10,7 +10,8 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 
 class DecodingEvalCallback(BaseCallback):
-    """Periodically evaluate the agent's decoding performance.
+    """
+    Periodically evaluate the agent's decoding performance.
 
     Every eval_freq steps: run the agent on eval_episodes episodes,
     compute logical error rate, log ratio to MWPM baseline, and
@@ -27,7 +28,6 @@ class DecodingEvalCallback(BaseCallback):
         verbose: int = 1,
     ):
         """
-        Args:
             eval_env: Environment for evaluation.
             mwpm_ler: MWPM logical error rate (for computing ratio).
             eval_freq: Evaluate every this many timesteps.
@@ -81,7 +81,7 @@ class DecodingEvalCallback(BaseCallback):
         }
         self.eval_results.append(result)
 
-        # Log to tensorboard
+        # log to tensorboard
         self.logger.record("eval/logical_error_rate", ler)
         self.logger.record("eval/mwpm_ratio", ratio)
         self.logger.record("eval/mean_reward", mean_reward)
@@ -93,7 +93,7 @@ class DecodingEvalCallback(BaseCallback):
                 f"MWPM ratio={ratio:.3f}, reward={mean_reward:.3f}"
             )
 
-        # Save best model
+        # save best model
         if ler < self.best_ler and self.save_path is not None:
             self.best_ler = ler
             path = os.path.join(self.save_path, "best_model")
@@ -105,7 +105,8 @@ class DecodingEvalCallback(BaseCallback):
 
 
 class CurriculumCallback(BaseCallback):
-    """Linearly increase physical error rate during training.
+    """
+    Linearly increase physical error rate during training.
 
     Helps the agent learn basic correction patterns on easy instances
     before encountering harder cases.
@@ -120,7 +121,6 @@ class CurriculumCallback(BaseCallback):
         verbose: int = 0,
     ):
         """
-        Args:
             env: The training environment (must have _circuit that can be replaced).
             p_start: Starting physical error rate.
             p_end: Final physical error rate.

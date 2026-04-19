@@ -1,4 +1,5 @@
-"""Custom CNN feature extractors for syndrome grids.
+"""
+Custom CNN feature extractors for syndrome grids.
 
 Standard Atari-style CNNs (8x8, 4x4 kernels) would collapse these tiny grids.
 We use 3x3 kernels with padding=1 to preserve spatial dimensions, and no pooling.
@@ -13,17 +14,12 @@ from torch import nn
 
 
 class SyndromeCNN(BaseFeaturesExtractor):
-    """3-layer CNN for syndrome grids.
+    """
+    3-layer CNN for syndrome grids.
 
     Designed for small spatial grids (4x4 to 8x8) with multiple channels
     (syndrome rounds + correction history). Uses 3x3 kernels with padding=1
     to preserve spatial dimensions through all layers.
-
-    Architecture:
-        Conv2d(in, 32, 3, pad=1) -> ReLU ->
-        Conv2d(32, 64, 3, pad=1) -> ReLU ->
-        Conv2d(64, 64, 3, pad=1) -> ReLU ->
-        Flatten -> Linear(64*H*W, features_dim) -> ReLU
     """
 
     def __init__(

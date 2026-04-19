@@ -75,7 +75,7 @@ class TestEstimateThreshold:
         error_rates = np.array([0.001, 0.005, 0.01, 0.05, 0.1])
         # d=3: worse at low p, better at high p
         # d=5: better at low p, worse at high p
-        # Crossing around p=0.01
+        # crossing around p=0.01
         ler_d3 = np.array([0.001, 0.01, 0.05, 0.3, 0.45])
         ler_d5 = np.array([0.0001, 0.005, 0.08, 0.4, 0.48])
 
@@ -88,7 +88,7 @@ class TestEstimateThreshold:
     def test_no_crossing(self):
         error_rates = np.array([0.001, 0.01, 0.1])
         ler_d3 = np.array([0.1, 0.2, 0.4])
-        ler_d5 = np.array([0.2, 0.3, 0.45])  # Always worse
+        ler_d5 = np.array([0.2, 0.3, 0.45])
 
         threshold = estimate_threshold(
             error_rates, {3: ler_d3, 5: ler_d5}
@@ -163,7 +163,7 @@ class TestDecoderEvaluator:
         df = evaluator.run(verbose=False)
 
         assert len(df) == 3
-        # Higher error rate should generally have higher LER
+        # higher error rate should generally have higher LER
         lers = df.sort_values("physical_error_rate")["logical_error_rate"].values
         assert lers[-1] > lers[0]
 
@@ -224,5 +224,5 @@ class TestDecoderEvaluator:
         evaluator.add_decoder("mwpm", make_mwpm_decode_fn())
         df = evaluator.run(verbose=False)
 
-        # Biased-Z not yet implemented, should be skipped
+        # biased-Z not yet implemented, should be skipped
         assert set(df["noise_model"]).issubset({"depolarizing", "biased_z"})

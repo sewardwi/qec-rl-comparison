@@ -1,4 +1,5 @@
-"""Syndrome extraction, spatial reshaping, and visualization.
+"""
+Syndrome extraction, spatial reshaping, and visualization.
 
 The raw detector output from Stim is a flat boolean array. This module
 reshapes it into spatially meaningful representations for CNN input and
@@ -22,7 +23,8 @@ import stim
 
 
 class SyndromeGrid:
-    """Precomputed mapping from flat detector indices to spatial grid.
+    """
+    Precomputed mapping from flat detector indices to spatial grid.
 
     Constructed once per circuit, then used to reshape any number of
     syndrome samples efficiently.
@@ -41,7 +43,7 @@ class SyndromeGrid:
         if not coords:
             raise ValueError("Circuit has no detector coordinates.")
 
-        # Extract spatial and temporal coordinates
+        # extract spatial and temporal coordinates
         xs = []
         ys = []
         ts = []
@@ -51,7 +53,7 @@ class SyndromeGrid:
             ys.append(c[1])
             ts.append(c[2] if len(c) > 2 else 0.0)
 
-        # Build sorted unique coordinate axes
+        # build sorted unique coordinate axes
         unique_x = sorted(set(xs))
         unique_y = sorted(set(ys))
         unique_t = sorted(set(ts))
@@ -64,7 +66,7 @@ class SyndromeGrid:
         y_to_row = {y: i for i, y in enumerate(unique_y)}
         t_to_round = {t: i for i, t in enumerate(unique_t)}
 
-        # Build index mapping: detector_idx -> (round, row, col)
+        # build index mapping: detector_idx -> (round, row, col)
         self._det_round = np.zeros(self.num_detectors, dtype=np.int32)
         self._det_row = np.zeros(self.num_detectors, dtype=np.int32)
         self._det_col = np.zeros(self.num_detectors, dtype=np.int32)
@@ -74,19 +76,18 @@ class SyndromeGrid:
             self._det_row[det_idx] = y_to_row[ys[det_idx]]
             self._det_col[det_idx] = x_to_col[xs[det_idx]]
 
-        # Store raw coordinates for visualization
+        # store raw coordinates for visualization
         self._unique_x = unique_x
         self._unique_y = unique_y
         self._coords = coords
 
     def reshape_single(self, flat_syndrome: np.ndarray) -> np.ndarray:
-        """Reshape a single flat syndrome to spatial grid.
+        """
+        Reshape a single flat syndrome to spatial grid.
 
-        Args:
-            flat_syndrome: Bool array of shape (num_detectors,).
+        flat_syndrome: Bool array of shape (num_detectors,).
 
-        Returns:
-            Grid of shape (rounds, grid_h, grid_w) with float32 values.
+        Grid of shape (rounds, grid_h, grid_w) with float32 values.
         """
         grid = np.zeros(
             (self.rounds, self.grid_h, self.grid_w), dtype=np.float32
@@ -97,13 +98,12 @@ class SyndromeGrid:
         return grid
 
     def reshape_batch(self, flat_batch: np.ndarray) -> np.ndarray:
-        """Reshape a batch of flat syndromes to spatial grids.
+        """
+        Reshape a batch of flat syndromes to spatial grids.
 
-        Args:
-            flat_batch: Bool array of shape (batch, num_detectors).
+        flat_batch: Bool array of shape (batch, num_detectors).
 
-        Returns:
-            Grid of shape (batch, rounds, grid_h, grid_w) with float32 values.
+        Grid of shape (batch, rounds, grid_h, grid_w) with float32 values.
         """
         batch_size = flat_batch.shape[0]
         grids = np.zeros(
@@ -117,18 +117,17 @@ class SyndromeGrid:
 
 
 def compute_syndrome_diff(grid: np.ndarray) -> np.ndarray:
-    """Compute temporal difference (XOR) between consecutive syndrome rounds.
+    """
+    Compute temporal difference (XOR) between consecutive syndrome rounds.
 
     In surface code decoding, the change between consecutive rounds
     highlights where new errors occurred.
 
-    Args:
-        grid: Shape (..., rounds, grid_h, grid_w).
+    grid: Shape (..., rounds, grid_h, grid_w).
 
-    Returns:
-        Shape (..., rounds-1, grid_h, grid_w) of XOR between consecutive rounds.
+    Shape (..., rounds-1, grid_h, grid_w) of XOR between consecutive rounds.
     """
-    # Works on both single and batched grids via ellipsis
+    # works on both single and batched grids via ellipsis
     return np.logical_xor(grid[..., 1:, :, :], grid[..., :-1, :, :]).astype(
         np.float32
     )
@@ -137,18 +136,17 @@ def compute_syndrome_diff(grid: np.ndarray) -> np.ndarray:
 def get_syndrome_statistics(
     syndromes: np.ndarray, syndrome_grid: SyndromeGrid
 ) -> dict:
-    """Compute statistical properties of syndrome data.
+    """
+    Compute statistical properties of syndrome data.
 
-    Args:
-        syndromes: Flat bool array of shape (num_shots, num_detectors).
-        syndrome_grid: SyndromeGrid instance for this circuit.
+    syndromes: Flat bool array of shape (num_shots, num_detectors).
+    syndrome_grid: SyndromeGrid instance for this circuit.
 
-    Returns:
-        Dict with:
-            detection_fraction: fraction of detectors triggered (averaged over shots)
-            mean_syndrome_weight: average number of triggered detectors per shot
-            std_syndrome_weight: std dev of syndrome weight
-            per_detector_rates: per-detector trigger rates, shape (num_detectors,)
+    Dict with:
+        detection_fraction: fraction of detectors triggered (averaged over shots)
+        mean_syndrome_weight: average number of triggered detectors per shot
+        std_syndrome_weight: std dev of syndrome weight
+        per_detector_rates: per-detector trigger rates, shape (num_detectors,)
     """
     weights = syndromes.sum(axis=1)
     per_det = syndromes.mean(axis=0)
@@ -169,20 +167,19 @@ def visualize_syndrome(
     ax: Optional[plt.Axes] = None,
     title: Optional[str] = None,
 ) -> plt.Axes:
-    """Plot a single syndrome round on a grid.
+    """
+    Plot a single syndrome round on a grid.
 
     Triggered detectors are shown as filled red squares; inactive
     detectors as open blue squares.
 
-    Args:
-        grid: Shape (rounds, grid_h, grid_w) from SyndromeGrid.reshape_single.
-        distance: Code distance (for labeling).
-        round_idx: Which round to plot.
-        ax: Matplotlib axes; created if None.
-        title: Optional plot title.
+    grid: Shape (rounds, grid_h, grid_w) from SyndromeGrid.reshape_single.
+    distance: Code distance (for labeling).
+    round_idx: Which round to plot.
+    ax: Matplotlib axes; created if None.
+    title: Optional plot title.
 
-    Returns:
-        The matplotlib Axes object.
+    The matplotlib Axes object.
     """
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=(5, 5))
@@ -190,7 +187,6 @@ def visualize_syndrome(
     round_data = grid[round_idx]
     h, w = round_data.shape
 
-    # Plot grid
     for row in range(h):
         for col in range(w):
             val = round_data[row, col]
@@ -208,7 +204,7 @@ def visualize_syndrome(
             )
 
     ax.set_xlim(-0.5, w - 0.5)
-    ax.set_ylim(h - 0.5, -0.5)  # Flip y-axis so (0,0) is top-left
+    ax.set_ylim(h - 0.5, -0.5)
     ax.set_aspect("equal")
     ax.set_xlabel("Column")
     ax.set_ylabel("Row")
@@ -225,15 +221,14 @@ def visualize_syndrome_spacetime(
     distance: int,
     ax: Optional[plt.Axes] = None,
 ) -> plt.Axes:
-    """3D scatter plot of triggered detectors across all rounds.
+    """
+    3D scatter plot of triggered detectors across all rounds.
 
-    Args:
-        grid: Shape (rounds, grid_h, grid_w) from SyndromeGrid.reshape_single.
-        distance: Code distance (for labeling).
-        ax: 3D matplotlib axes; created if None.
+    grid: Shape (rounds, grid_h, grid_w) from SyndromeGrid.reshape_single.
+    distance: Code distance (for labeling).
+    ax: 3D matplotlib axes; created if None.
 
-    Returns:
-        The matplotlib Axes3D object.
+    The matplotlib Axes3D object.
     """
     if ax is None:
         fig = plt.figure(figsize=(8, 6))

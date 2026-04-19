@@ -1,4 +1,5 @@
-"""Error budget, DEM analysis, and circuit structure analysis.
+"""
+Error budget, DEM analysis, and circuit structure analysis.
 
 Tools for understanding the quantum simulation layer — showing
 understanding of the physics, not just the RL.
@@ -15,14 +16,13 @@ from src.quantum.surface_code import SurfaceCodeCircuit, SurfaceCodeParams
 
 
 def analyze_detector_error_model(dem: stim.DetectorErrorModel) -> dict:
-    """Parse a detector error model and extract statistics.
+    """
+    Parse a detector error model and extract statistics.
 
-    Args:
-        dem: Stim DetectorErrorModel.
+    dem: Stim DetectorErrorModel.
 
-    Returns:
-        Dict with error mechanism counts, weight distribution,
-        detector connectivity, and boundary error info.
+    Dict with error mechanism counts, weight distribution,
+    detector connectivity, and boundary error info.
     """
     num_errors = 0
     error_weights = []
@@ -69,18 +69,17 @@ def compute_error_budget(
     num_shots: int = 10_000,
     seed: int = 42,
 ) -> dict:
-    """Estimate each noise channel's contribution to logical error rate.
+    """
+    Estimate each noise channel's contribution to logical error rate.
 
     Toggles channels on/off and compares logical error rates.
 
-    Args:
-        params: Surface code parameters.
-        physical_error_rate: Base physical error rate.
-        num_shots: Shots per evaluation.
-        seed: Random seed.
+    params: Surface code parameters.
+    physical_error_rate: Base physical error rate.
+    num_shots: Shots per evaluation.
+    seed: Random seed.
 
-    Returns:
-        Dict mapping noise channel -> logical error rate.
+    Dict mapping noise channel -> logical error rate.
     """
     from src.quantum.decoder_baseline import MWPMDecoder
 
@@ -135,14 +134,13 @@ def scaling_analysis(
     distances: list[int],
     noise_config: NoiseConfig | None = None,
 ) -> pd.DataFrame:
-    """Circuit complexity vs distance: qubits, detectors, DEM size, depth.
+    """
+    Circuit complexity vs distance: qubits, detectors, DEM size, depth.
 
-    Args:
-        distances: Code distances to analyze.
-        noise_config: Noise config (default: depolarizing at p=0.01).
+    distances: Code distances to analyze.
+    noise_config: Noise config (default: depolarizing at p=0.01).
 
-    Returns:
-        DataFrame with circuit statistics per distance.
+    DataFrame with circuit statistics per distance.
     """
     if noise_config is None:
         noise_config = NoiseConfig(NoiseModelType.DEPOLARIZING, 0.01)

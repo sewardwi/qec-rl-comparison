@@ -1,4 +1,5 @@
-"""Systematic decoder evaluation harness.
+"""
+Systematic decoder evaluation harness.
 
 Runs all registered decoders across a parameter grid on IDENTICAL syndrome
 sets for fair comparison. Produces a DataFrame with per-decoder, per-distance,
@@ -18,7 +19,8 @@ from src.quantum.surface_code import SurfaceCodeParams
 
 
 class DecoderEvaluator:
-    """Runs all decoders across a parameter grid on identical syndrome sets.
+    """
+    Runs all decoders across a parameter grid on identical syndrome sets.
 
     Usage:
         evaluator = DecoderEvaluator(
@@ -40,13 +42,12 @@ class DecoderEvaluator:
         seed: int = 42,
     ):
         """
-        Args:
-            distances: Code distances to evaluate.
-            error_rates: Physical error rates to sweep.
-            noise_configs: Noise model configurations. Each config's
-                physical_error_rate is overridden by the error_rates sweep.
-            num_eval_shots: Number of syndrome samples per evaluation point.
-            seed: Seed for deterministic syndrome sampling.
+        distances: Code distances to evaluate.
+        error_rates: Physical error rates to sweep.
+        noise_configs: Noise model configurations. Each config's
+            physical_error_rate is overridden by the error_rates sweep.
+        num_eval_shots: Number of syndrome samples per evaluation point.
+        seed: Seed for deterministic syndrome sampling.
         """
         self.distances = distances
         self.error_rates = error_rates
@@ -56,24 +57,24 @@ class DecoderEvaluator:
         self._decoders: dict[str, Callable] = {}
 
     def add_decoder(self, name: str, decode_fn: Callable) -> None:
-        """Register a decoder for evaluation.
+        """
+        Register a decoder for evaluation
 
-        Args:
-            name: Decoder name (e.g., "mwpm", "dqn", "ppo").
-            decode_fn: Callable(syndromes, circuit) -> predicted_observable_flips.
-                syndromes: bool array (num_shots, num_detectors)
-                circuit: SurfaceCodeCircuit
-                Returns: bool array (num_shots, num_observables)
+        name: Decoder name (e.g., "mwpm", "dqn", "ppo")
+        decode_fn: Callable(syndromes, circuit) -> predicted_observable_flips
+            syndromes: bool array (num_shots, num_detectors)
+            circuit: SurfaceCodeCircuit
+            Returns: bool array (num_shots, num_observables)
         """
         self._decoders[name] = decode_fn
 
     def run(self, verbose: bool = True) -> pd.DataFrame:
-        """Run all decoders across the full parameter grid.
+        """
+        Run all decoders across the full parameter grid
 
-        Returns:
-            DataFrame with columns: decoder, distance, physical_error_rate,
-            noise_model, logical_error_rate, ci_lower, ci_upper,
-            num_shots, num_errors.
+        DataFrame with columns: decoder, distance, physical_error_rate,
+        noise_model, logical_error_rate, ci_lower, ci_upper,
+        num_shots, num_errors.
         """
         rows = []
 
@@ -140,10 +141,10 @@ class DecoderEvaluator:
 
 
 def make_mwpm_decode_fn():
-    """Create a MWPM decode function compatible with DecoderEvaluator.
+    """
+    Create a MWPM decode function compatible with DecoderEvaluator.
 
-    Returns:
-        Callable(syndromes, circuit) -> predictions.
+    Callable(syndromes, circuit) -> predictions.
     """
     from src.quantum.decoder_baseline import MWPMDecoder
 
@@ -155,18 +156,17 @@ def make_mwpm_decode_fn():
 
 
 def make_rl_decode_fn(model, env_cls, env_kwargs: Optional[dict] = None):
-    """Create an RL agent decode function compatible with DecoderEvaluator.
+    """
+    Create an RL agent decode function compatible with DecoderEvaluator.
 
     The RL agent plays episodes in the environment. Each episode corresponds
     to one syndrome instance. Success/failure is determined by the environment.
 
-    Args:
-        model: Trained SB3 model with .predict(obs, deterministic=True).
-        env_cls: Environment class (e.g., SurfaceCodeEnv).
-        env_kwargs: Additional kwargs for env construction.
+    model: Trained SB3 model with .predict(obs, deterministic=True).
+    env_cls: Environment class (e.g., SurfaceCodeEnv).
+    env_kwargs: Additional kwargs for env construction.
 
-    Returns:
-        Callable(syndromes, circuit) -> predictions.
+    Callable(syndromes, circuit) -> predictions.
     """
 
     def decode(syndromes, circuit):
@@ -182,8 +182,8 @@ def make_rl_decode_fn(model, env_cls, env_kwargs: Optional[dict] = None):
                 action, _ = model.predict(obs, deterministic=True)
                 obs, _, terminated, truncated, info = env.step(int(action))
                 done = terminated or truncated
-            # If the agent succeeded, the correction was correct (no flip needed)
-            # If failed, the logical observable was flipped
+            # if agent succeeded the correction was correct (no flip needed)
+            # if failed the logical observable was flipped
             predictions[i, 0] = not info.get("success", False)
 
         return predictions

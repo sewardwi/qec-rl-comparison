@@ -1,4 +1,4 @@
-# Main experiment: logical vs physical error rate curves
+# main experiment: logical vs physical error rate curves
 experiment: threshold_sweep
 
 distances: [3, 5]

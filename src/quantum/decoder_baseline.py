@@ -1,4 +1,5 @@
-"""MWPM decoder baseline via PyMatching and Sinter benchmarking.
+"""
+MWPM decoder baseline via PyMatching and Sinter benchmarking.
 
 Provides the gold-standard classical decoder against which RL decoders
 are compared. Includes both:
@@ -26,15 +27,14 @@ from src.quantum.surface_code import (
 def clopper_pearson(
     k: int, n: int, alpha: float = 0.05
 ) -> tuple[float, float]:
-    """Clopper-Pearson exact binomial confidence interval.
+    """
+    Clopper-Pearson exact binomial confidence interval.
 
-    Args:
-        k: Number of successes (errors).
-        n: Number of trials (shots).
-        alpha: Significance level (default 0.05 for 95% CI).
+    k: Number of successes (errors).
+    n: Number of trials (shots).
+    alpha: Significance level (default 0.05 for 95% CI).
 
-    Returns:
-        (lower, upper) confidence interval bounds.
+    (lower, upper) confidence interval bounds.
     """
     from scipy.stats import beta as beta_dist
 
@@ -52,13 +52,7 @@ def clopper_pearson(
 
 
 class MWPMDecoder:
-    """Minimum Weight Perfect Matching decoder wrapping PyMatching.
-
-    Usage:
-        decoder = MWPMDecoder.from_circuit(surface_code_circuit)
-        predictions = decoder.decode_batch(syndromes)
-        results = decoder.evaluate(syndromes, observables)
-    """
+    """Minimum Weight Perfect Matching decoder wrapping PyMatching."""
 
     def __init__(self, matching: pymatching.Matching):
         self._matching = matching
@@ -82,13 +76,12 @@ class MWPMDecoder:
         return cls.from_circuit(sc.circuit)
 
     def decode_batch(self, syndromes: np.ndarray) -> np.ndarray:
-        """Decode a batch of syndromes.
+        """
+        Decode a batch of syndromes.
 
-        Args:
-            syndromes: Bool array of shape (batch, num_detectors).
+        syndromes: Bool array of shape (batch, num_detectors).
 
-        Returns:
-            predictions: Bool array of shape (batch, num_observables).
+        predictions: Bool array of shape (batch, num_observables).
         """
         return self._matching.decode_batch(syndromes)
 
@@ -98,15 +91,14 @@ class MWPMDecoder:
         observables: np.ndarray,
         alpha: float = 0.05,
     ) -> dict:
-        """Decode and compute logical error rate with confidence interval.
+        """
+        Decode and compute logical error rate with confidence interval.
 
-        Args:
-            syndromes: Bool array of shape (num_shots, num_detectors).
-            observables: Bool array of shape (num_shots, num_observables).
-            alpha: Significance level for Clopper-Pearson CI.
+        syndromes: Bool array of shape (num_shots, num_detectors).
+        observables: Bool array of shape (num_shots, num_observables).
+        alpha: Significance level for Clopper-Pearson CI.
 
-        Returns:
-            Dict with logical_error_rate, ci_lower, ci_upper, num_errors, num_shots.
+        Dict with logical_error_rate, ci_lower, ci_upper, num_errors, num_shots.
         """
         predictions = self.decode_batch(syndromes)
         errors = np.any(predictions != observables, axis=1)
@@ -133,24 +125,23 @@ def run_sinter_benchmark(
     max_shots: int = 100_000,
     max_errors: int = 1000,
 ) -> pd.DataFrame:
-    """High-throughput MWPM baseline generation via Sinter.
+    """
+    High-throughput MWPM baseline generation via Sinter.
 
     Sinter handles parallelization, early stopping after max_errors
     logical errors, and statistical aggregation.
 
-    Args:
-        distances: List of code distances to evaluate.
-        error_rates: List of physical error rates to sweep.
-        noise_params_fn: Optional callable(p) -> dict of Stim noise params.
-            Defaults to standard depolarizing (p applied to all channels).
-        basis: Logical basis ("X" or "Z").
-        num_workers: Number of parallel worker processes.
-        max_shots: Maximum samples per (distance, error_rate) point.
-        max_errors: Stop after this many logical errors per point.
+    distances: List of code distances to evaluate.
+    error_rates: List of physical error rates to sweep.
+    noise_params_fn: Optional callable(p) -> dict of Stim noise params.
+        Defaults to standard depolarizing (p applied to all channels).
+    basis: Logical basis ("X" or "Z").
+    num_workers: Number of parallel worker processes.
+    max_shots: Maximum samples per (distance, error_rate) point.
+    max_errors: Stop after this many logical errors per point.
 
-    Returns:
-        DataFrame with columns: distance, physical_error_rate,
-        logical_error_rate, num_shots, num_errors.
+    DataFrame with columns: distance, physical_error_rate,
+    logical_error_rate, num_shots, num_errors.
     """
     if noise_params_fn is None:
         def noise_params_fn(p):

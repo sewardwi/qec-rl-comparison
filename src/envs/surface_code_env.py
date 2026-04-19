@@ -1,4 +1,5 @@
-"""Gymnasium environment for surface code decoding as an MDP.
+"""
+Gymnasium environment for surface code decoding as an MDP.
 
 The agent observes syndrome measurements and applies Pauli corrections to
 data qubits, then commits to advance to the next round. After all rounds
@@ -47,7 +48,8 @@ from src.quantum.syndrome import SyndromeGrid
 
 
 class SurfaceCodeEnv(gym.Env):
-    """Gymnasium environment for surface code decoding.
+    """
+    Gymnasium environment for surface code decoding.
 
     The environment pre-samples batches of syndromes from a Stim circuit
     for efficiency. Each episode presents one syndrome instance for the
@@ -64,14 +66,14 @@ class SurfaceCodeEnv(gym.Env):
         gamma: float = 0.99,
         max_corrections_per_round: Optional[int] = None,
     ):
-        """Initialize the surface code decoding environment.
+        """
+        Initialize the surface code decoding environment.
 
-        Args:
-            circuit: A SurfaceCodeCircuit to sample syndromes from.
-            reward_type: One of "sparse", "potential_based", "heuristic_shaped".
-            gamma: Discount factor (used for potential-based shaping).
-            max_corrections_per_round: Safety limit on corrections per round.
-                Defaults to 2 * distance.
+        circuit: A SurfaceCodeCircuit to sample syndromes from.
+        reward_type: One of "sparse", "potential_based", "heuristic_shaped".
+        gamma: Discount factor (used for potential-based shaping).
+        max_corrections_per_round: Safety limit on corrections per round.
+            Defaults to 2 * distance.
         """
         super().__init__()
 
@@ -83,15 +85,15 @@ class SurfaceCodeEnv(gym.Env):
         d = self._params.distance
         self._max_corrections = max_corrections_per_round or 2 * d
 
-        # Build syndrome grid mapper
+        # build syndrome grid mapper
         self._syndrome_grid = SyndromeGrid(circuit.circuit)
         grid_h = self._syndrome_grid.grid_h
         grid_w = self._syndrome_grid.grid_w
-        # SyndromeGrid.rounds includes boundary detectors, so it's typically
-        # params.rounds + 1 (e.g., d=3 with 3 rounds gives 4 temporal slices).
+        # syndromeGrid.rounds includes boundary detectors, so it's typically
+        # params.rounds + 1 (e.g., d=3 with 3 rounds gives 4 temporal slices)
         syndrome_rounds = self._syndrome_grid.rounds
 
-        # Observation: syndrome temporal slices + X/Z correction channels
+        # observation: syndrome temporal slices + X/Z correction channels
         num_channels = syndrome_rounds + 2
         self.observation_space = gym.spaces.Box(
             low=0.0,
@@ -100,35 +102,35 @@ class SurfaceCodeEnv(gym.Env):
             dtype=np.float32,
         )
 
-        # Actions: X on each qubit + Z on each qubit + Y on each qubit + commit
+        # actions: X on each qubit + Z on each qubit + Y on each qubit + commit
         n_data = d * d
         self.action_space = gym.spaces.Discrete(3 * n_data + 1)
         self._n_data = n_data
         self._commit_action = 3 * n_data
 
-        # Correction channels need to map data qubit indices to grid positions.
-        # Data qubits sit on a d x d sub-grid within the larger detector grid.
-        # We'll place corrections on a d x d grid embedded in the grid_h x grid_w space.
+        # correction channels need to map data qubit indices to grid positions
+        # data qubits sit on a d x d sub-grid within the larger detector grid
+        # place corrections on a d x d grid embedded in the grid_h x grid_w space
         self._grid_h = grid_h
         self._grid_w = grid_w
         self._syndrome_rounds = syndrome_rounds
         self._rounds = self._params.rounds  # Number of commit rounds in episode
 
-        # Build data qubit -> grid position mapping
+        # build data qubit -> grid position mapping
         self._data_row, self._data_col = self._build_data_qubit_mapping()
 
-        # Pre-compute logical operator support (for reward computation).
+        # pre-compute logical operator support (for reward computation)
         # For Z-basis memory experiment, the logical X operator is a column of
-        # X corrections. The logical Z observable is what Stim tracks.
-        # We just need to know which data qubits are in the logical operator support.
+        # X corrections, the logical Z observable is what Stim tracks
+        # just need to know which data qubits are in the logical operator support
         self._logical_support = self._compute_logical_support()
 
-        # Batch sampling state
-        self._batch_idx = self.BATCH_SIZE  # Force resample on first reset
+        # batch sampling state
+        self._batch_idx = self.BATCH_SIZE
         self._syndromes: Optional[np.ndarray] = None
         self._observables: Optional[np.ndarray] = None
 
-        # Episode state
+        # episode state
         self._current_syndrome_grid: Optional[np.ndarray] = None
         self._current_observable: Optional[np.ndarray] = None
         self._x_corrections: Optional[np.ndarray] = None
@@ -137,27 +139,29 @@ class SurfaceCodeEnv(gym.Env):
         self._corrections_this_round: int = 0
 
     def _build_data_qubit_mapping(self) -> tuple[np.ndarray, np.ndarray]:
-        """Map data qubit indices (0..d^2-1) to positions in the observation grid.
+        """
+        Map data qubit indices (0..d^2-1) to positions in the observation grid.
 
         Data qubits are laid out on a d x d grid. We center this within the
         larger syndrome grid (grid_h x grid_w).
         """
         d = self._params.distance
-        # Data qubits arranged in a d x d grid, centered in the observation grid
-        # The syndrome grid is roughly (2d-1) x (2d-1), data qubits at even positions
+        # data qubits arranged in a d x d grid, centered in the observation grid
+        # syndrome grid is roughly (2d-1) x (2d-1), data qubits at even positions
         rows = np.zeros(d * d, dtype=np.int32)
         cols = np.zeros(d * d, dtype=np.int32)
         for i in range(d):
             for j in range(d):
                 idx = i * d + j
-                # Map to grid coordinates: data qubits at positions
+                # map to grid coordinates: data qubits at positions
                 # that align with the detector grid spacing
                 rows[idx] = min(i * 2, self._grid_h - 1)
                 cols[idx] = min(j * 2, self._grid_w - 1)
         return rows, cols
 
     def _compute_logical_support(self) -> np.ndarray:
-        """Compute which data qubit indices support the logical operator.
+        """
+        Compute which data qubit indices support the logical operator.
 
         For the rotated surface code Z-basis memory experiment, the logical
         observable involves a specific set of data qubits. We identify these
@@ -179,7 +183,7 @@ class SurfaceCodeEnv(gym.Env):
         # We use a simple column as the support. The exact column depends on
         # Stim's convention, but for the reward computation what matters is
         # that we correctly track X-correction parity.
-        return np.arange(0, d * d, d)  # First column: qubits 0, d, 2d, ...
+        return np.arange(0, d * d, d)
 
     def _refill_batch(self):
         """Sample a new batch of syndromes from the circuit."""
@@ -191,7 +195,8 @@ class SurfaceCodeEnv(gym.Env):
         seed: Optional[int] = None,
         options: Optional[dict] = None,
     ) -> tuple[np.ndarray, dict[str, Any]]:
-        """Reset environment for a new episode.
+        """
+        Reset environment for a new episode.
 
         Draws the next pre-sampled syndrome. Resamples a batch if exhausted.
         """
@@ -204,12 +209,12 @@ class SurfaceCodeEnv(gym.Env):
         self._current_observable = self._observables[self._batch_idx]
         self._batch_idx += 1
 
-        # Reshape flat syndrome to spatial grid: (rounds, grid_h, grid_w)
+        # reshape flat syndrome to spatial grid: (rounds, grid_h, grid_w)
         self._current_syndrome_grid = self._syndrome_grid.reshape_single(
             flat_syndrome
         )
 
-        # Reset correction accumulators
+        # reset correction accumulators
         self._x_corrections = np.zeros(self._n_data, dtype=np.bool_)
         self._z_corrections = np.zeros(self._n_data, dtype=np.bool_)
         self._current_round = 0
@@ -225,29 +230,28 @@ class SurfaceCodeEnv(gym.Env):
     def step(
         self, action: int
     ) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
-        """Execute one action in the environment.
+        """
+        Execute one action in the environment.
 
-        Args:
-            action: Integer action from action_space.
+        action: Integer action from action_space.
 
-        Returns:
-            (observation, reward, terminated, truncated, info)
+        (observation, reward, terminated, truncated, info)
         """
         d2 = self._n_data
         terminated = False
         truncated = False
         info: dict[str, Any] = {}
 
-        # Track state before action for potential-based reward
+        # track state before action for potential-based reward
         syndrome_weight_before = int(self._current_syndrome_grid.sum())
 
         if action == self._commit_action:
-            # Commit: advance to next round
+            # commit: advance to next round
             self._current_round += 1
             self._corrections_this_round = 0
 
             if self._current_round >= self._rounds:
-                # Episode over: compute terminal reward
+                # episode over: compute terminal reward
                 terminated = True
                 success = self._check_success()
                 info["success"] = success
@@ -260,7 +264,7 @@ class SurfaceCodeEnv(gym.Env):
                 obs = self._build_observation()
                 return obs, reward, terminated, truncated, info
 
-            # Non-terminal commit: step reward
+            # non-terminal commit: step reward
             reward = self._compute_step_reward(
                 syndrome_weight_before, is_correction=False
             )
@@ -295,7 +299,7 @@ class SurfaceCodeEnv(gym.Env):
         else:
             raise ValueError(f"Invalid action {action}, max is {self._commit_action}")
 
-        # Truncate if too many corrections in this round
+        # truncate if too many corrections in this round
         if self._corrections_this_round >= self._max_corrections:
             truncated = True
             success = self._check_success()
@@ -309,10 +313,10 @@ class SurfaceCodeEnv(gym.Env):
         return obs, reward, terminated, truncated, info
 
     def _build_observation(self) -> np.ndarray:
-        """Build the full observation tensor.
+        """
+        Build the full observation tensor.
 
-        Returns:
-            Shape (rounds + 2, grid_h, grid_w) float32 array.
+        Shape (rounds + 2, grid_h, grid_w) float32 array
         """
         sr = self._syndrome_rounds
         obs = np.zeros(
@@ -320,7 +324,7 @@ class SurfaceCodeEnv(gym.Env):
             dtype=np.float32,
         )
 
-        # Syndrome channels (all temporal slices from detector grid)
+        # syndrome channels (all temporal slices from detector grid)
         obs[:sr] = self._current_syndrome_grid
 
         # X-correction channel
@@ -336,13 +340,14 @@ class SurfaceCodeEnv(gym.Env):
         return obs
 
     def _check_success(self) -> bool:
-        """Check if the applied corrections successfully preserve the logical qubit.
+        """
+        Check if the applied corrections successfully preserve the logical qubit.
 
         For Z-basis memory experiment: X corrections on the logical Z support
         flip the logical observable. Success = our correction parity matches
         the actual flip from Stim.
         """
-        # Parity of X corrections on the logical operator support
+        # parity of X corrections on the logical operator support
         correction_parity = np.bitwise_xor.reduce(
             self._x_corrections[self._logical_support]
         )
@@ -420,18 +425,17 @@ class SurfaceCodeEnv(gym.Env):
         reward_type: str = "sparse",
         **kwargs,
     ) -> SurfaceCodeEnv:
-        """Convenience constructor from basic parameters.
+        """
+        Convenience constructor from basic parameters.
 
-        Args:
-            distance: Code distance.
-            rounds: Number of rounds (default = distance).
-            physical_error_rate: Physical error rate.
-            noise_model: Noise model type string.
-            reward_type: Reward type string.
-            **kwargs: Passed to SurfaceCodeEnv.__init__.
+        distance: Code distance.
+        rounds: Number of rounds (default = distance).
+        physical_error_rate: Physical error rate.
+        noise_model: Noise model type string.
+        reward_type: Reward type string.
+        **kwargs: Passed to SurfaceCodeEnv.__init__.
 
-        Returns:
-            Configured SurfaceCodeEnv.
+        Configured SurfaceCodeEnv.
         """
         from src.quantum.noise_models import NoiseConfig, NoiseModelType
 

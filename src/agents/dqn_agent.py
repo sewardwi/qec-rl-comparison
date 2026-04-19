@@ -8,18 +8,17 @@ from src.agents.networks import SyndromeCNN
 
 
 def create_dqn_agent(env, config: dict) -> DQN:
-    """Create a DQN agent configured for surface code decoding.
+    """
+    Create a DQN agent configured for surface code decoding.
 
-    Args:
-        env: Gymnasium environment.
-        config: Dict with optional keys:
-            - seed (int): Random seed. Default 42.
-            - log_dir (str): Tensorboard log directory.
-            - features_dim (int): CNN output features. Default 128.
-            - overrides (dict): Override any DQN constructor kwarg.
+    env: Gymnasium environment
+    config: Dict with optional keys:
+        - seed (int): Random seed, default 42
+        - log_dir (str): Tensorboard log directory
+        - features_dim (int): CNN output features, default 128
+        - overrides (dict): Override any DQN constructor kwarg
 
-    Returns:
-        Configured DQN agent.
+    Configured DQN agent.
     """
     features_dim = config.get("features_dim", 128)
 

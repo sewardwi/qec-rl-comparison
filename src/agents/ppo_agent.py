@@ -8,18 +8,17 @@ from src.agents.networks import SyndromeCNN
 
 
 def create_ppo_agent(env, config: dict) -> PPO:
-    """Create a PPO agent configured for surface code decoding.
+    """
+    Create a PPO agent configured for surface code decoding.
 
-    Args:
-        env: Gymnasium environment.
-        config: Dict with optional keys:
-            - seed (int): Random seed. Default 42.
-            - log_dir (str): Tensorboard log directory.
-            - features_dim (int): CNN output features. Default 128.
-            - overrides (dict): Override any PPO constructor kwarg.
+    env: Gymnasium environment.
+    config: Dict with optional keys:
+        - seed (int): Random seed. Default 42.
+        - log_dir (str): Tensorboard log directory.
+        - features_dim (int): CNN output features. Default 128.
+        - overrides (dict): Override any PPO constructor kwarg.
 
-    Returns:
-        Configured PPO agent.
+    Configured PPO agent.
     """
     features_dim = config.get("features_dim", 128)
 

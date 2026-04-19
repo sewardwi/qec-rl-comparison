@@ -1,4 +1,5 @@
-"""Main training entry point for surface code RL decoders.
+"""
+Main training entry point for surface code RL decoders.
 
 Usage:
     python scripts/train.py --agent dqn --distance 3 --error-rate 0.01
@@ -11,7 +12,6 @@ import argparse
 import os
 import sys
 
-# Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.agents.callbacks import DecodingEvalCallback
@@ -62,14 +62,14 @@ def main():
     )
     args = parser.parse_args()
 
-    # Auto-set timesteps based on distance
+    # auto-set timesteps based on distance
     if args.timesteps is None:
         timestep_map = {3: 500_000, 5: 1_000_000, 7: 2_000_000}
         args.timesteps = timestep_map.get(args.distance, 500_000)
 
     set_global_seed(args.seed)
 
-    # Create circuit
+    # create circuit
     params = SurfaceCodeParams(distance=args.distance, rounds=args.distance)
     noise_config = NoiseConfig(
         model_type=NoiseModelType(args.noise_model),
@@ -77,15 +77,15 @@ def main():
     )
     circuit = build_noisy_circuit(params, noise_config)
 
-    # Create training and eval environments
+    # create training and eval environments
     train_env = SurfaceCodeEnv(
         circuit=circuit, reward_type=args.reward_type
     )
     eval_env = SurfaceCodeEnv(
-        circuit=circuit, reward_type="sparse"  # Always eval with sparse
+        circuit=circuit, reward_type="sparse"
     )
 
-    # Compute MWPM baseline for comparison
+    # compute MWPM baseline for comparison
     print("Computing MWPM baseline...")
     decoder = MWPMDecoder.from_surface_code_circuit(circuit)
     syn, obs = circuit.sample(5000, seed=args.seed)
@@ -93,7 +93,7 @@ def main():
     mwpm_ler = mwpm_result["logical_error_rate"]
     print(f"MWPM LER: {mwpm_ler:.4f}")
 
-    # Create agent
+    # create agent
     run_name = f"{args.agent}_d{args.distance}_p{args.error_rate}"
     log_dir = os.path.join(args.log_dir, run_name)
     save_dir = os.path.join(args.save_dir, run_name)
@@ -109,7 +109,7 @@ def main():
     else:
         agent = create_ppo_agent(train_env, config)
 
-    # Create eval callback
+    # create eval callback
     eval_callback = DecodingEvalCallback(
         eval_env=eval_env,
         mwpm_ler=mwpm_ler,
@@ -118,7 +118,6 @@ def main():
         save_path=save_dir,
     )
 
-    # Train
     print(f"\nTraining {args.agent.upper()} on d={args.distance}, p={args.error_rate}")
     print(f"Total timesteps: {args.timesteps:,}")
     print(f"Eval every {args.eval_freq:,} steps ({args.eval_episodes} episodes)")
@@ -132,12 +131,11 @@ def main():
         progress_bar=True,
     )
 
-    # Save final model
+    # save final model
     final_path = os.path.join(save_dir, "final_model")
     agent.save(final_path)
     print(f"\nFinal model saved to {final_path}")
 
-    # Print summary
     if eval_callback.eval_results:
         best = min(eval_callback.eval_results, key=lambda x: x["logical_error_rate"])
         print(f"\nBest LER: {best['logical_error_rate']:.4f} "

@@ -1,4 +1,5 @@
-"""Noise model library for surface code simulations.
+"""
+Noise model library for surface code simulations.
 
 Provides physically-motivated noise models for surface code circuits:
   1. Depolarizing: Standard symmetric X/Y/Z errors (benchmark)
@@ -26,7 +27,8 @@ class NoiseModelType(Enum):
 
 @dataclasses.dataclass(frozen=True)
 class NoiseConfig:
-    """Configuration for a noise model.
+    """
+    Configuration for a noise model.
 
     Attributes:
         model_type: Which noise model to use.
@@ -54,14 +56,13 @@ class NoiseConfig:
 def build_noisy_circuit(
     params: SurfaceCodeParams, config: NoiseConfig
 ) -> SurfaceCodeCircuit:
-    """Build a noisy surface code circuit for the given noise model.
+    """
+    Build a noisy surface code circuit for the given noise model.
 
-    Args:
-        params: Surface code parameters (distance, rounds, basis).
-        config: Noise configuration specifying model type and error rate.
+    params: Surface code parameters (distance, rounds, basis).
+    config: Noise configuration specifying model type and error rate.
 
-    Returns:
-        SurfaceCodeCircuit with noise applied.
+    SurfaceCodeCircuit with noise applied.
     """
     builders = {
         NoiseModelType.DEPOLARIZING: _build_depolarizing,
@@ -83,7 +84,8 @@ def build_noisy_circuit(
 def _build_depolarizing(
     params: SurfaceCodeParams, config: NoiseConfig
 ) -> SurfaceCodeCircuit:
-    """Standard depolarizing noise: p applied uniformly to all noise channels.
+    """
+    Standard depolarizing noise: p applied uniformly to all noise channels.
 
     Physical motivation: symmetric X/Y/Z errors at equal rates. This is the
     standard benchmark noise model for surface code decoders.
@@ -113,7 +115,8 @@ def _build_depolarizing(
 def _build_measurement_dominated(
     params: SurfaceCodeParams, config: NoiseConfig
 ) -> SurfaceCodeCircuit:
-    """Measurement-dominated noise: readout errors >> gate errors.
+    """
+    Measurement-dominated noise: readout errors >> gate errors.
 
     Physical motivation: in many NISQ devices, measurement fidelity is the
     dominant error source, with gate errors roughly 10x lower.
@@ -143,7 +146,8 @@ def _build_measurement_dominated(
 def _build_biased_z(
     params: SurfaceCodeParams, config: NoiseConfig
 ) -> SurfaceCodeCircuit:
-    """Biased-Z (dephasing-dominated) noise.
+    """
+    Biased-Z (dephasing-dominated) noise.
 
     Physical motivation: in superconducting qubits (e.g., transmon),
     T2 << T1 means dephasing (Z) errors dominate over bit-flip (X) errors.
@@ -157,39 +161,39 @@ def _build_biased_z(
     p = config.physical_error_rate
     eta = config.bias_ratio
 
-    # With bias eta: pz = eta * px, py = px, total = px + py + pz = (2 + eta)*px
+    # with bias eta: pz = eta * px, py = px, total = px + py + pz = (2 + eta)*px
     px = p / (2 + eta)
     py = px
     pz = eta * px
 
-    # Generate noiseless circuit first
+    # generate noiseless circuit first
     noiseless = stim.Circuit.generated(
         params.task_string,
         distance=params.distance,
         rounds=params.rounds,
     )
 
-    # Insert biased noise into the circuit
+    # insert biased noise into the circuit
     noisy = stim.Circuit()
     for instruction in noiseless.flattened():
         noisy.append(instruction)
         name = instruction.name
         targets = instruction.targets_copy()
 
-        # After single-qubit Clifford gates: add biased Pauli channel
+        # after single-qubit Clifford gates: add biased Pauli channel
         if name in ("H", "S", "S_DAG", "SQRT_X", "SQRT_X_DAG",
                      "SQRT_Y", "SQRT_Y_DAG", "SQRT_Z", "SQRT_Z_DAG"):
             qubit_indices = [t.value for t in targets if not t.is_combiner]
             for q in qubit_indices:
                 noisy.append("PAULI_CHANNEL_1", [q], [px, py, pz])
 
-        # After two-qubit gates: add independent biased noise on each qubit
+        # after two-qubit gates: add independent biased noise on each qubit
         elif name in ("CX", "CY", "CZ", "CNOT"):
             qubit_indices = [t.value for t in targets if not t.is_combiner]
             for q in qubit_indices:
                 noisy.append("PAULI_CHANNEL_1", [q], [px, py, pz])
 
-        # After resets: add biased flip
+        # after resets: add biased flip
         elif name in ("R", "RX", "RY", "RZ"):
             qubit_indices = [t.value for t in targets if not t.is_combiner]
             for q in qubit_indices:
@@ -206,7 +210,8 @@ def _build_biased_z(
 def _build_correlated(
     params: SurfaceCodeParams, config: NoiseConfig
 ) -> SurfaceCodeCircuit:
-    """Correlated (crosstalk) noise model.
+    """
+    Correlated (crosstalk) noise model.
 
     Physical motivation: in multi-qubit processors, two-qubit gates on
     adjacent qubits can induce crosstalk errors. We model this by starting
@@ -219,9 +224,9 @@ def _build_correlated(
     p = config.physical_error_rate
     p_corr = config.correlation_strength
     if p_corr <= 0:
-        p_corr = p / 5  # Default: correlation is 20% of physical error rate
+        p_corr = p / 5  # default: correlation is 20% of physical error rate
 
-    # Start with standard depolarizing circuit
+    # start with standard depolarizing circuit
     noise_params = {
         "after_clifford_depolarization": p,
         "before_round_data_depolarization": p,
@@ -235,13 +240,13 @@ def _build_correlated(
         **noise_params,
     )
 
-    # Get data qubit pairs that are neighbors
+    # get data qubit pairs that are neighbors
     coords = circuit.get_final_qubit_coordinates()
     qubit_positions = {}
     for q_idx, coord in coords.items():
         qubit_positions[q_idx] = (coord[0], coord[1])
 
-    # Find adjacent pairs (Manhattan distance <= 2 on the lattice)
+    # find adjacent pairs (Manhattan distance <= 2 on the lattice)
     neighbor_pairs = []
     qubit_list = sorted(qubit_positions.keys())
     for i in range(len(qubit_list)):
@@ -253,7 +258,7 @@ def _build_correlated(
             if dist <= 2:
                 neighbor_pairs.append((q1, q2))
 
-    # Append correlated errors after TICK instructions
+    # append correlated errors after TICK instructions
     noisy = stim.Circuit()
     for instruction in circuit.flattened():
         noisy.append(instruction)

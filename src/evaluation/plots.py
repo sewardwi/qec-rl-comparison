@@ -1,4 +1,5 @@
-"""Publication-quality figures for the paper.
+"""
+Publication-quality figures for the paper.
 
 Generates all 9 figures mapped to paper sections:
   1. Threshold curves (LER vs p_phys, per distance)
@@ -22,7 +23,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-# Consistent style
+# consistent style
 STYLE_KWARGS = {
     "font.size": 11,
     "axes.labelsize": 12,
@@ -59,7 +60,8 @@ def plot_threshold_curves(
     df: pd.DataFrame,
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 1: Logical vs physical error rate, one line per distance.
+    """
+    Figure 1: Logical vs physical error rate, one line per distance.
 
     Creates a panel for each decoder.
     """
@@ -110,7 +112,8 @@ def plot_decoder_comparison(
     df: pd.DataFrame,
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 2: All decoders overlaid per noise model, all distances shown.
+    """
+    Figure 2: All decoders overlaid per noise model, all distances shown.
 
     One panel per noise model. Within each panel: color = decoder,
     linestyle = distance (solid d=3, dashed d=5, dotted d=7).
@@ -206,12 +209,7 @@ def plot_training_curves(
     training_data: dict[str, list[dict]],
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 4: Training curves — reward & LER vs timestep.
-
-    Args:
-        training_data: Dict mapping agent name -> list of eval result dicts
-            with keys: timestep, logical_error_rate, mean_reward.
-    """
+    """Figure 4: Training curves — reward & LER vs timestep."""
     _apply_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
 
@@ -247,7 +245,8 @@ def plot_noise_comparison(
     distance: int = 3,
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 5: LER across noise models, all decoders, all distances.
+    """
+    Figure 5: LER across noise models, all decoders, all distances.
 
     One panel per distance. Within each panel: color = noise model,
     linestyle = decoder (solid MWPM, dashed DQN, dotted PPO).
@@ -298,11 +297,7 @@ def plot_reward_ablation(
     ablation_data: dict[str, list[dict]],
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 6: Reward shaping ablation — sparse vs potential vs heuristic.
-
-    Args:
-        ablation_data: Dict mapping reward_type -> list of eval result dicts.
-    """
+    """Figure 6: Reward shaping ablation — sparse vs potential vs heuristic."""
     _apply_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
 
@@ -345,12 +340,7 @@ def plot_syndrome_gallery(
     distance: int = 3,
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 7: Syndrome pattern gallery under each noise model.
-
-    Args:
-        syndromes_by_noise: Dict mapping noise_model -> syndrome grid
-            of shape (rounds, grid_h, grid_w).
-    """
+    """Figure 7: Syndrome pattern gallery under each noise model."""
     _apply_style()
     n_models = len(syndromes_by_noise)
     fig, axes = plt.subplots(1, n_models, figsize=(4 * n_models, 4))
@@ -392,19 +382,12 @@ def plot_decoder_behavior(
     success: bool,
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 8: Example decoder behavior — syndrome + corrections on lattice.
+    """Figure 8: Example decoder behavior — syndrome + corrections on lattice."""
 
-    Args:
-        syndrome_grid: Shape (rounds, grid_h, grid_w).
-        x_corrections: Bool array of shape (d*d,).
-        z_corrections: Bool array of shape (d*d,).
-        distance: Code distance.
-        success: Whether decoding was successful.
-    """
     _apply_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.5))
 
-    # Left: syndrome
+    # left: syndrome
     round_data = syndrome_grid[0]
     ax1.imshow(round_data, cmap="RdBu_r", vmin=0, vmax=1,
                interpolation="nearest", aspect="equal")
@@ -415,19 +398,19 @@ def plot_decoder_behavior(
     ax1.set_xlabel("Column")
     ax1.set_ylabel("Row")
 
-    # Right: corrections on d x d grid
+    # right: corrections on d x d grid
     corr_grid = np.zeros((distance, distance, 3))  # RGB
     for i in range(distance):
         for j in range(distance):
             idx = i * distance + j
             if x_corrections[idx] and z_corrections[idx]:
-                corr_grid[i, j] = [0.8, 0.0, 0.8]  # Purple for Y
+                corr_grid[i, j] = [0.8, 0.0, 0.8]  # purple for Y
             elif x_corrections[idx]:
-                corr_grid[i, j] = [1.0, 0.0, 0.0]  # Red for X
+                corr_grid[i, j] = [1.0, 0.0, 0.0]  # red for X
             elif z_corrections[idx]:
-                corr_grid[i, j] = [0.0, 0.0, 1.0]  # Blue for Z
+                corr_grid[i, j] = [0.0, 0.0, 1.0]  # blue for Z
             else:
-                corr_grid[i, j] = [0.9, 0.9, 0.9]  # Light gray
+                corr_grid[i, j] = [0.9, 0.9, 0.9]  # light gray
 
     ax2.imshow(corr_grid, interpolation="nearest", aspect="equal")
     for i in range(distance):
@@ -461,12 +444,8 @@ def plot_generalization_matrix(
     matrix_df: pd.DataFrame,
     save_path: Optional[str] = None,
 ) -> plt.Figure:
-    """Figure 9: Generalization matrix — train on noise A, eval on noise B.
-
-    Args:
-        matrix_df: DataFrame with columns: train_noise, eval_noise,
-            decoder, logical_error_rate.
-    """
+    """Figure 9: Generalization matrix — train on noise A, eval on noise B."""
+    
     _apply_style()
     decoders = sorted(matrix_df["decoder"].unique())
     n_dec = len(decoders)

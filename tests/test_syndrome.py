@@ -44,7 +44,7 @@ class TestSyndromeGrid:
 
         # Stim generates d+1 unique time slices for d rounds
         assert sg.rounds == d + 1
-        # Grid dimensions depend on detector placement; verify reasonable range
+        # grid dimensions depend on detector placement; verify reasonable range
         assert sg.grid_h >= d - 1
         assert sg.grid_w >= d - 1
         assert sg.grid_h <= 2 * d
@@ -59,7 +59,7 @@ class TestSyndromeGrid:
         assert grid.shape == (sg.rounds, sg.grid_h, sg.grid_w)
         assert grid.dtype == np.float32
 
-        # Number of nonzero entries in grid should equal syndrome weight
+        # number of nonzero entries in grid should equal syndrome weight
         assert grid.sum() == flat.sum()
 
     def test_reshape_batch(self, circuit_d3):
@@ -70,7 +70,7 @@ class TestSyndromeGrid:
         assert grids.shape == (50, sg.rounds, sg.grid_h, sg.grid_w)
         assert grids.dtype == np.float32
 
-        # Check consistency with single reshape
+        # check consistency with single reshape
         for i in range(5):
             single = sg.reshape_single(syndromes[i])
             np.testing.assert_array_equal(grids[i], single)
@@ -80,7 +80,7 @@ class TestSyndromeGrid:
         syndromes, _ = circuit_d5.sample(shots=100, seed=42)
         grids = sg.reshape_batch(syndromes)
 
-        # Total weight should be preserved
+        # total weight should be preserved
         flat_weights = syndromes.sum(axis=1)
         grid_weights = grids.sum(axis=(1, 2, 3))
         np.testing.assert_array_almost_equal(flat_weights, grid_weights)
@@ -113,7 +113,7 @@ class TestSyndromeDiff:
         assert diffs.shape == (10, sg.rounds - 1, sg.grid_h, sg.grid_w)
 
     def test_identical_rounds_give_zero_diff(self):
-        """If all rounds are identical, diff should be all zeros."""
+        # If all rounds are identical, diff should be all zeros
         grid = np.ones((3, 5, 5), dtype=np.float32)
         diff = compute_syndrome_diff(grid)
         assert diff.sum() == 0.0

@@ -1,4 +1,5 @@
-"""Run all experiments and generate paper data + figures.
+"""
+Run all experiments and generate paper data + figures.
 
 This script orchestrates the full experiment pipeline:
   1. Train DQN and PPO on d=3 (depolarizing + measurement + biased-Z)
@@ -11,7 +12,7 @@ This script orchestrates the full experiment pipeline:
 
 Usage:
     python scripts/run_experiments.py
-    python scripts/run_experiments.py --timesteps 50000  # Quick test
+    python scripts/run_experiments.py --timesteps 50000   # Quick test
     python scripts/run_experiments.py --skip-training     # Figures only
 """
 
@@ -118,7 +119,7 @@ def run_all_experiments(args):
     os.makedirs(args.fig_dir, exist_ok=True)
     os.makedirs(args.model_dir, exist_ok=True)
 
-    training_data = {}  # For training curves plot
+    training_data = {}   # For training curves plot
     trained_models = {}  # (agent_type, distance, noise) -> model
     all_eval_results = []
 
@@ -130,8 +131,8 @@ def run_all_experiments(args):
         print("PHASE 1: Training")
         print("=" * 60)
 
-        # All 4 noise models x both agents using the combined reward.
-        # d=5 only for depolarizing (larger action/state space, train longer).
+        # all 4 noise models x both agents using the combined reward
+        # d=5 only for depolarizing (larger action/state space, train longer)
         NOISE_MODELS_D3 = ["depolarizing", "measurement", "biased_z", "correlated"]
         NOISE_MODELS_D5 = ["depolarizing"]
         REWARD_TYPE = "combined"
@@ -170,14 +171,14 @@ def run_all_experiments(args):
             trained_models[(agent_type, d, noise_name)] = model
             training_data[key] = eval_results
 
-        # Save training curves data
+        # save training curves data
         training_curves_path = os.path.join(args.data_dir, "training_curves.json")
         with open(training_curves_path, "w") as f:
             json.dump(training_data, f, indent=2)
         print(f"\n  Training curves saved to {training_curves_path}")
 
     else:
-        # Load existing data if skipping training
+        # load existing data if skipping training
         training_curves_path = os.path.join(args.data_dir, "training_curves.json")
         if os.path.exists(training_curves_path):
             with open(training_curves_path) as f:
@@ -197,7 +198,7 @@ def run_all_experiments(args):
         noise_config = _make_noise_config(noise_name, args.error_rate)
         print(f"\n  Evaluating {noise_name}...")
 
-        # Run per-distance to avoid RL model/observation shape mismatches
+        # run per-distance to avoid RL model/observation shape mismatches
         for d in [3, 5]:
             evaluator = DecoderEvaluator(
                 distances=[d],
@@ -208,7 +209,7 @@ def run_all_experiments(args):
             )
             evaluator.add_decoder("mwpm", make_mwpm_decode_fn())
 
-            # Add RL models trained on this distance + noise
+            # add RL models trained on this distance + noise
             for agent_type in ["dqn", "ppo"]:
                 key = (agent_type, d, noise_name)
                 if key in trained_models:
@@ -220,7 +221,7 @@ def run_all_experiments(args):
             df = evaluator.run(verbose=True)
             all_eval_results.append(df)
 
-    # Combine all evaluation results
+    # combine all evaluation results
     eval_df = pd.concat(all_eval_results, ignore_index=True)
     eval_path = os.path.join(args.data_dir, "evaluation_results.csv")
     eval_df.to_csv(eval_path, index=False)
@@ -309,35 +310,34 @@ def run_all_experiments(args):
     import matplotlib
     matplotlib.use("Agg")
 
-    # Figure 1: Threshold curves
     if not eval_df.empty:
-        # Normalize decoder names for plotting
+        # normalize decoder names for plotting
         plot_df = eval_df.copy()
         plot_df["decoder"] = plot_df["decoder"].str.replace(r"_d\d", "", regex=True)
 
+        # figure 1: threshold curves
         fig1 = plot_threshold_curves(plot_df, os.path.join(args.fig_dir, "fig1_threshold_curves.png"))
         plt.close(fig1)
         print("  Figure 1: Threshold curves")
 
-        # Figure 2: Decoder comparison
+        # figure 2: decoder comparison
         fig2 = plot_decoder_comparison(plot_df, os.path.join(args.fig_dir, "fig2_decoder_comparison.png"))
         plt.close(fig2)
         print("  Figure 2: Decoder comparison")
 
-        # Figure 3: Decoder ratio
+        # figure 3: decoder ratio
         fig3 = plot_decoder_ratio(plot_df, os.path.join(args.fig_dir, "fig3_decoder_ratio.png"))
         plt.close(fig3)
         print("  Figure 3: Decoder ratio")
 
-        # Figure 5: Noise comparison
+        # figure 5: noise comparison
         fig5 = plot_noise_comparison(plot_df,
                                      save_path=os.path.join(args.fig_dir, "fig5_noise_comparison.png"))
         plt.close(fig5)
         print("  Figure 5: Noise comparison")
 
-    # Figure 4: Training curves
     if training_data:
-        # Include d=3 depolarizing for both agents on the main training curve
+        # include d=3 depolarizing for both agents on the main training curve
         tc_data = {}
         for key in ["dqn_d3_depolarizing", "ppo_d3_depolarizing"]:
             if key in training_data and training_data[key]:
@@ -345,11 +345,12 @@ def run_all_experiments(args):
                 tc_data[agent_name] = training_data[key]
 
         if tc_data:
+            # figure 4: training curves
             fig4 = plot_training_curves(tc_data, os.path.join(args.fig_dir, "fig4_training_curves.png"))
             plt.close(fig4)
             print("  Figure 4: Training curves")
 
-    # Figure 7: Syndrome gallery
+    # figure 7: syndrome gallery
     syndromes_by_noise = {}
     for noise_name in ["depolarizing", "measurement", "biased_z", "correlated"]:
         noise_config = _make_noise_config(noise_name, args.error_rate)
@@ -369,17 +370,17 @@ def run_all_experiments(args):
         plt.close(fig7)
         print("  Figure 7: Syndrome gallery")
 
-    # Figure 8: Decoder behavior
+    # figure 8: decoder behavior
     params3 = SurfaceCodeParams(distance=3, rounds=3)
     noise_depol = NoiseConfig(NoiseModelType.DEPOLARIZING, args.error_rate)
     circuit3 = build_noisy_circuit(params3, noise_depol)
     env_demo = SurfaceCodeEnv(circuit=circuit3)
 
-    # Run one episode with a trained model if available
+    # run one episode with a trained model if available
     demo_model = trained_models.get(("dqn", 3, "depolarizing"))
     if demo_model is None:
         demo_model = trained_models.get(("ppo", 3, "depolarizing"))
-    # (keys are (agent_type, distance, noise_name) — same as trained_models dict)
+    # keys are (agent_type, distance, noise_name) same as trained_models dict
 
     if demo_model is not None:
         obs_demo, _ = env_demo.reset()
@@ -400,19 +401,19 @@ def run_all_experiments(args):
         plt.close(fig8)
         print("  Figure 8: Decoder behavior")
 
-    # Figure 9: Generalization matrix
+    # figure 9: generalization matrix
     if not gen_df.empty:
         fig9 = plot_generalization_matrix(gen_df,
                                           save_path=os.path.join(args.fig_dir, "fig9_generalization.png"))
         plt.close(fig9)
         print("  Figure 9: Generalization matrix")
 
-    # Scaling table (supplementary)
+    # scaling table (supplementary)
     fig_s = plot_scaling_table(scaling_df, os.path.join(args.fig_dir, "fig_scaling_table.png"))
     plt.close(fig_s)
     print("  Figure S: Scaling table")
 
-    # Threshold estimation
+    # threshold estimation
     for noise_name in eval_df["noise_model"].unique():
         mwpm_sub = eval_df[(eval_df["decoder"] == "mwpm") & (eval_df["noise_model"] == noise_name)]
         if mwpm_sub.empty:
