@@ -76,3 +76,10 @@ Both agents learn above-random baselines quickly but remain 3–5× worse than M
 - [Sinter](https://github.com/quantumlib/Stim/tree/main/glue/sample): parallelized Monte Carlo benchmarking
 - [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3): DQN and PPO implementations
 - [Gymnasium](https://gymnasium.farama.org/): RL environment interface
+
+---
+
+## Paper
+
+See QEC-RL-Comparison-Paper.pdf for a more comprehensive write up of formulation,
+experiments, and results. This was last updated on April 20, 2026.
